@@ -16,5 +16,7 @@ public class Household
     /// <summary>
     /// Gets or sets the profiles, including the owner's own profile.
     /// </summary>
+#pragma warning disable CA1002, CA2227 // A settable list keeps the stored JSON simple to read and write
     public List<ProfileEntry> Profiles { get; set; } = [];
+#pragma warning restore CA1002, CA2227
 }

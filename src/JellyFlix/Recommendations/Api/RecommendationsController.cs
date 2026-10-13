@@ -130,7 +130,7 @@ public class RecommendationsController : ControllerBase
         return auth.IsApiKey ? null : auth.User;
     }
 
-    private BaseItemDto[] ToDtos(RecommendationService.ProfileModel model, User user, IReadOnlyList<ScoredTitle> titles)
+    private BaseItemDto[] ToDtos(ProfileModel model, User user, IReadOnlyList<ScoredTitle> titles)
     {
         var items = titles.Select(t => model.Items[t.Title.Id]).ToList();
 
