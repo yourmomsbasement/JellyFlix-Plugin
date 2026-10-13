@@ -1,0 +1,20 @@
+[
+  {
+    "guid": "c1a2981e-3ba2-44c5-9360-83cf293c2a13",
+    "name": "JellyFlix",
+    "description": "Netflix-style household profiles, recommendations and automatic JellyFlix web client updates.",
+    "overview": "One login, several profiles with their own watch history; personalized Top Picks and Because you watched rows; keeps the JellyFlix web client up to date.",
+    "owner": "yourmomsbasement",
+    "category": "General",
+    "versions": [
+      {
+        "version": "1.0.0.0",
+        "changelog": "See https://github.com/yourmomsbasement/JellyFlix-Plugin/releases/tag/v1.0.0",
+        "targetAbi": "13.0.0.0",
+        "sourceUrl": "https://github.com/yourmomsbasement/JellyFlix-Plugin/releases/download/v1.0.0/jellyflix_1.0.0.0.zip",
+        "checksum": "34bdb60a33575d385d7ea2e75c3a226f",
+        "timestamp": "2026-10-13T20:29:28Z"
+      }
+    ]
+  }
+]
