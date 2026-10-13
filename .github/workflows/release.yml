@@ -1,0 +1,59 @@
+name: Release
+
+# Push a tag like v1.2.0 to publish JellyFlix 1.2.0.0: builds the plugin zip, attaches it to a GitHub release and
+# adds it to manifest.json, the plugin repository Jellyfin installs and updates from.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test JellyFlix.slnx
+
+      - name: Build
+        id: build
+        run: |
+          version="${GITHUB_REF_NAME#v}.0"
+          # The Jellyfin version the plugin is built against, e.g. 13.0.0.0
+          abi="$(grep -oP 'AssemblyVersion\("\K[0-9.]+' jellyfin-server/SharedVersion.cs).0"
+          dotnet build src/JellyFlix -c Release -p:Version="${version}" -p:AssemblyVersion="${version}" -p:FileVersion="${version}"
+          (cd src/JellyFlix/bin/Release/net10.0 && zip -q "${GITHUB_WORKSPACE}/jellyflix_${version}.zip" JellyFlix.dll)
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "abi=${abi}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.build.outputs.version }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" "jellyflix_${VERSION}.zip" \
+            --title "JellyFlix ${VERSION}" --generate-notes
+
+      - name: Update plugin repository
+        env:
+          VERSION: ${{ steps.build.outputs.version }}
+          ABI: ${{ steps.build.outputs.abi }}
+        run: |
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/jellyflix_${VERSION}.zip"
+          git fetch origin main && git checkout main
+          python3 scripts/update_manifest.py manifest.json "jellyflix_${VERSION}.zip" "${VERSION}" "${url}" "${ABI}" "See https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "Add JellyFlix ${VERSION} to the plugin repository"
+          git push origin main

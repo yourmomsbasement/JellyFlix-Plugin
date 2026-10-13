@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JellyFlix</title>
+</head>
+<body>
+    <div id="JellyFlixConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="JellyFlixConfigForm">
+                    <h2 class="sectionTitle">Profiles</h2>
+                    <p>
+                        Each profile is a hidden Jellyfin user that can only be reached through its household's login,
+                        so watch history, Continue Watching and parental controls are tracked per profile.
+                    </p>
+                    <div class="inputContainer">
+                        <input is="emby-input" id="MaxProfilesPerHousehold" type="number" min="1" max="20" label="Maximum profiles per household (including the owner)" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" id="KidsMaxParentalRating" type="number" min="0" max="1000" label="Highest parental rating score for kids profiles" />
+                        <div class="fieldDescription">10 is PG / TV-PG in the US rating system. Unrated items are always hidden from kids profiles.</div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="AllowNonAdminOwners" />
+                            <span>Allow non-administrator accounts to create profiles</span>
+                        </label>
+                    </div>
+
+                    <h2 class="sectionTitle">Web client updates</h2>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="WebUpdatesEnabled" />
+                            <span>Automatically install new JellyFlix web client releases</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">Checked at startup and every six hours. Only releases built for this Jellyfin version are installed.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" id="WebReleasesRepository" type="text" label="Release repository (owner/name)" />
+                    </div>
+
+                    <div id="webUpdateStatus" class="paperList" style="padding: 1em; margin-bottom: 1.5em;">Loading…</div>
+                    <div id="webDirHelp" class="paperList" style="padding: 1em; margin-bottom: 1.5em; display: none;"></div>
+
+                    <div style="display: flex; gap: 1em;">
+                        <button is="emby-button" type="submit" class="raised button-submit emby-button" style="flex: 1;">
+                            <span>Save</span>
+                        </button>
+                        <button is="emby-button" type="button" id="btnCheckNow" class="raised emby-button" style="flex: 1;">
+                            <span>Check for updates now</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                var pluginId = 'c1a2981e-3ba2-44c5-9360-83cf293c2a13';
+                var page = document.querySelector('#JellyFlixConfigPage');
+
+                function escapeHtml(text) {
+                    var div = document.createElement('div');
+                    div.textContent = text == null ? '' : String(text);
+                    return div.innerHTML;
+                }
+
+                function renderStatus(status) {
+                    var installed = status.Installed
+                        ? escapeHtml(status.Installed.Version) + ' (installed ' + new Date(status.Installed.InstalledAt).toLocaleString() + ')'
+                        : 'none yet';
+                    page.querySelector('#webUpdateStatus').innerHTML =
+                        '<div><b>Installed:</b> ' + installed + '</div>' +
+                        '<div><b>Latest for this server:</b> ' + escapeHtml(status.LatestVersion || 'unknown') + '</div>' +
+                        '<div><b>Last check:</b> ' + (status.LastCheck ? new Date(status.LastCheck).toLocaleString() + ' &mdash; ' + escapeHtml(status.LastResult) : 'not yet') + '</div>' +
+                        '<div><b>Install folder:</b> <code>' + escapeHtml(status.InstallPath) + '</code></div>';
+
+                    var help = page.querySelector('#webDirHelp');
+                    if (status.IsServerUsingInstall) {
+                        help.style.display = 'none';
+                    } else {
+                        help.style.display = 'block';
+                        help.innerHTML =
+                            '<b>Jellyfin is not serving the auto-updated web client yet.</b> It currently serves <code>' + escapeHtml(status.ServerWebPath) + '</code>. ' +
+                            'Point Jellyfin\'s web folder at <code>' + escapeHtml(status.InstallPath) + '</code> once, then restart Jellyfin:' +
+                            '<ul>' +
+                            '<li>Linux package: in <code>/etc/default/jellyfin</code> set <code>JELLYFIN_WEB_OPT="--webdir=' + escapeHtml(status.InstallPath) + '"</code></li>' +
+                            '<li>Docker: add the environment variable <code>JELLYFIN_WEB_DIR=' + escapeHtml(status.InstallPath) + '</code></li>' +
+                            '<li>Windows: add <code>--webdir "' + escapeHtml(status.InstallPath) + '"</code> to the server\'s startup arguments</li>' +
+                            '</ul>' +
+                            (status.Installed ? '' : 'Run <b>Check for updates now</b> first so the folder contains a web client.');
+                    }
+                }
+
+                function loadStatus() {
+                    return ApiClient.getJSON(ApiClient.getUrl('JellyFlix/WebUpdate')).then(renderStatus);
+                }
+
+                page.addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        page.querySelector('#MaxProfilesPerHousehold').value = config.MaxProfilesPerHousehold;
+                        page.querySelector('#KidsMaxParentalRating').value = config.KidsMaxParentalRating;
+                        page.querySelector('#AllowNonAdminOwners').checked = config.AllowNonAdminOwners;
+                        page.querySelector('#WebUpdatesEnabled').checked = config.WebUpdatesEnabled;
+                        page.querySelector('#WebReleasesRepository').value = config.WebReleasesRepository;
+                        return loadStatus();
+                    }).finally(function () {
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+                page.querySelector('#btnCheckNow').addEventListener('click', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('JellyFlix/WebUpdate/Check'), dataType: 'json' })
+                        .then(renderStatus)
+                        .finally(function () {
+                            Dashboard.hideLoadingMsg();
+                        });
+                });
+
+                page.querySelector('#JellyFlixConfigForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        config.MaxProfilesPerHousehold = parseInt(page.querySelector('#MaxProfilesPerHousehold').value, 10);
+                        config.KidsMaxParentalRating = parseInt(page.querySelector('#KidsMaxParentalRating').value, 10);
+                        config.AllowNonAdminOwners = page.querySelector('#AllowNonAdminOwners').checked;
+                        config.WebUpdatesEnabled = page.querySelector('#WebUpdatesEnabled').checked;
+                        config.WebReleasesRepository = page.querySelector('#WebReleasesRepository').value.trim();
+                        ApiClient.updatePluginConfiguration(pluginId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                    });
+                    return false;
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>

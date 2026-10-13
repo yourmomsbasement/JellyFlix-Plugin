@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The JellyFlix Jellyfin plugin. Built against the jellyfin-server submodule (the JellyFlix server fork). -->
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <!-- The server already ships every referenced assembly (including transitive ones), so none may be copied into the plugin folder. -->
+  <ItemDefinitionGroup>
+    <ProjectReference>
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\jellyfin-server\MediaBrowser.Controller\MediaBrowser.Controller.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Configuration\configPage.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="JellyFlix.Tests" />
+  </ItemGroup>
+
+</Project>

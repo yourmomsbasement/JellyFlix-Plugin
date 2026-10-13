@@ -1,0 +1,23 @@
+<Solution>
+  <Folder Name="/jellyfin-server/">
+    <Project Path="jellyfin-server/Emby.Naming/Emby.Naming.csproj" />
+    <Project Path="jellyfin-server/Jellyfin.Data/Jellyfin.Data.csproj" />
+    <Project Path="jellyfin-server/MediaBrowser.Common/MediaBrowser.Common.csproj" />
+    <Project Path="jellyfin-server/MediaBrowser.Controller/MediaBrowser.Controller.csproj" />
+    <Project Path="jellyfin-server/MediaBrowser.Model/MediaBrowser.Model.csproj" />
+  </Folder>
+  <Folder Name="/jellyfin-server/src/">
+    <Project Path="jellyfin-server/src/Jellyfin.CodeAnalysis/Jellyfin.CodeAnalysis.csproj" />
+    <Project Path="jellyfin-server/src/Jellyfin.Extensions/Jellyfin.Extensions.csproj" />
+    <Project Path="jellyfin-server/src/Jellyfin.MediaEncoding.Keyframes/Jellyfin.MediaEncoding.Keyframes.csproj" />
+  </Folder>
+  <Folder Name="/jellyfin-server/src/Jellyfin.Database/">
+    <Project Path="jellyfin-server/src/Jellyfin.Database/Jellyfin.Database.Implementations/Jellyfin.Database.Implementations.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/JellyFlix/JellyFlix.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/JellyFlix.Tests/JellyFlix.Tests.csproj" />
+  </Folder>
+</Solution>
