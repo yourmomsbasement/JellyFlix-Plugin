@@ -74,5 +74,5 @@ dotnet test JellyFlix.slnx
 dotnet build src/JellyFlix -c Release   # → src/JellyFlix/bin/Release/net10.0/JellyFlix.dll
 ```
 
-Releasing: push a tag such as `v1.0.1`. The release workflow tests, builds `jellyflix_1.0.1.0.zip`, attaches it to a
+Releasing: push a tag such as `v1.0.1`, or run the Release workflow from the Actions tab with version `1.0.1`. The release workflow tests, builds `jellyflix_1.0.1.0.zip`, attaches it to a
 GitHub release and adds it to `manifest.json`, which Jellyfin's catalog reads.
