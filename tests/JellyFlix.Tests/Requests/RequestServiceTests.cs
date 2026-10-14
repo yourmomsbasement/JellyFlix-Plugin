@@ -78,7 +78,7 @@ public sealed class RequestServiceTests : IDisposable
 
         Assert.False(result.IsEnabled);
         Assert.Empty(_seerr.Requests);
-        await Assert.ThrowsAsync<SeerrException>(() => CreateService().RequestAsync(_profileId, new CreateRequestDto { TmdbId = 1, MediaType = "movie" }, CancellationToken.None));
+        await Assert.ThrowsAsync<RequestProviderException>(() => CreateService().RequestAsync(_profileId, new CreateRequestDto { TmdbId = 1, MediaType = "movie" }, CancellationToken.None));
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public sealed class RequestServiceTests : IDisposable
         var service = CreateService();
 
         Assert.False((await service.SearchAsync(_profileId, "dune", CancellationToken.None)).CanRequest);
-        var error = await Assert.ThrowsAsync<SeerrException>(() => service.RequestAsync(_profileId, new CreateRequestDto { TmdbId = 1, MediaType = "movie" }, CancellationToken.None));
+        var error = await Assert.ThrowsAsync<RequestProviderException>(() => service.RequestAsync(_profileId, new CreateRequestDto { TmdbId = 1, MediaType = "movie" }, CancellationToken.None));
         Assert.Equal(HttpStatusCode.Forbidden, error.StatusCode);
 
         _config.AllowKidsRequests = true;
@@ -143,7 +143,7 @@ public sealed class RequestServiceTests : IDisposable
     [InlineData(SeerrMediaStatus.Blocklisted, RequestStatus.Blocked)]
     [InlineData(SeerrMediaStatus.Deleted, RequestStatus.None)]
     public void MapsSeerrsStatus(SeerrMediaStatus? status, RequestStatus expected)
-        => Assert.Equal(expected, RequestService.GetStatus(status is null ? null : new SeerrMediaInfo { Status = status.Value }));
+        => Assert.Equal(expected, SeerrRequestProvider.GetStatus(status is null ? null : new SeerrMediaInfo { Status = status.Value }));
 
     private RequestService CreateService()
     {
@@ -151,7 +151,8 @@ public sealed class RequestServiceTests : IDisposable
         factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(_httpClient);
         var requesters = new Mock<IRequesterResolver>();
         requesters.Setup(r => r.ResolveAsync(_profileId)).ReturnsAsync(() => _requester);
-        return new RequestService(new SeerrClient(factory.Object, () => _config), requesters.Object, () => _config, TimeProvider.System, NullLogger<RequestService>.Instance);
+        var seerr = new SeerrRequestProvider(new SeerrClient(factory.Object, () => _config), () => _config, TimeProvider.System, NullLogger<SeerrRequestProvider>.Instance);
+        return new RequestService([seerr], requesters.Object, () => _config, NullLogger<RequestService>.Instance);
     }
 
     private sealed record SentRequest(HttpMethod Method, string Url, string? ApiKey, string? ApiUser, string? Body);

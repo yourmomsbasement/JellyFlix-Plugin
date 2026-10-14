@@ -28,19 +28,31 @@
                         </label>
                     </div>
 
-                    <h2 class="sectionTitle">Requests (Seerr)</h2>
+                    <h2 class="sectionTitle">Requests (Seerr or Ombi)</h2>
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label>
                             <input is="emby-checkbox" type="checkbox" id="RequestsEnabled" />
                             <span>Let profiles request titles that aren't in the library</span>
                         </label>
-                        <div class="fieldDescription checkboxFieldDescription">Search shows matching movies and shows from Seerr (Jellyseerr / Overseerr) with a Request button.</div>
+                        <div class="fieldDescription checkboxFieldDescription">Search shows matching movies and shows from Seerr (Jellyseerr / Overseerr) or Ombi with a Request button.</div>
+                    </div>
+                    <div class="selectContainer">
+                        <select is="emby-select" id="RequestsProvider" label="Request service">
+                            <option value="Seerr">Seerr (Jellyseerr / Overseerr)</option>
+                            <option value="Ombi">Ombi</option>
+                        </select>
                     </div>
                     <div class="inputContainer">
                         <input is="emby-input" id="SeerrUrl" type="url" label="Seerr address, e.g. http://192.168.1.10:5055" />
                     </div>
                     <div class="inputContainer">
                         <input is="emby-input" id="SeerrApiKey" type="password" label="Seerr API key (Seerr → Settings → General)" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" id="OmbiUrl" type="url" label="Ombi address, e.g. http://192.168.1.10:3579" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" id="OmbiApiKey" type="password" label="Ombi API key (Ombi → Settings → Ombi)" />
                     </div>
                     <div class="checkboxContainer">
                         <label>
@@ -171,6 +183,9 @@
                         page.querySelector('#SeerrUrl').value = config.SeerrUrl || '';
                         page.querySelector('#SeerrApiKey').value = config.SeerrApiKey || '';
                         page.querySelector('#AllowKidsRequests').checked = config.AllowKidsRequests;
+                        page.querySelector('#RequestsProvider').value = config.RequestsProvider || 'Seerr';
+                        page.querySelector('#OmbiUrl').value = config.OmbiUrl || '';
+                        page.querySelector('#OmbiApiKey').value = config.OmbiApiKey || '';
                         page.querySelector('#SemanticSearchEnabled').checked = config.SemanticSearchEnabled;
                         page.querySelector('#SeasonalTheme').value = config.SeasonalTheme || 'Auto';
                         page.querySelector('#DynamicColors').checked = config.DynamicColors;
@@ -206,6 +221,9 @@
                         config.SeerrUrl = page.querySelector('#SeerrUrl').value.trim();
                         config.SeerrApiKey = page.querySelector('#SeerrApiKey').value.trim();
                         config.AllowKidsRequests = page.querySelector('#AllowKidsRequests').checked;
+                        config.RequestsProvider = page.querySelector('#RequestsProvider').value;
+                        config.OmbiUrl = page.querySelector('#OmbiUrl').value.trim();
+                        config.OmbiApiKey = page.querySelector('#OmbiApiKey').value.trim();
                         config.SemanticSearchEnabled = page.querySelector('#SemanticSearchEnabled').checked;
                         config.SeasonalTheme = page.querySelector('#SeasonalTheme').value;
                         config.DynamicColors = page.querySelector('#DynamicColors').checked;

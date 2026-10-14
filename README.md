@@ -11,7 +11,8 @@ that does all of this:
 - **Recommendations**: Top Picks, "Because you watched…", "More Like This" and the match percentage, learned from each
   profile's history. See [how it works](#how-recommendations-work).
 - **Requests**: search shows movies and shows that aren't in the library, with a **Request** button that goes
-  through [Seerr](https://github.com/seerr-team/seerr) (Jellyseerr / Overseerr). See [requests](#requests).
+  through [Seerr](https://github.com/seerr-team/seerr) (Jellyseerr / Overseerr) or [Ombi](https://ombi.io). See
+  [requests](#requests).
 - **Search by description**: "space movie with a stranded astronaut" finds titles by their plot, tagline, genres,
   keywords and cast, and by meaning too with an embeddings API. See [search by description](#search-by-description).
 - **Artwork per profile**: each profile can pick its own poster and background for a title without changing them for
@@ -70,8 +71,10 @@ restart Jellyfin.
 | Maximum profiles per household | 5 | Including the account owner's own profile. |
 | Highest parental rating score for kids profiles | 10 | 10 is PG / TV-PG; unrated titles are always hidden from kids profiles. |
 | Let non-administrator accounts create profiles | On | Otherwise only administrators can have profiles. |
-| Let profiles request titles that aren't in the library | Off | Shows request cards in search (needs Seerr below). |
+| Let profiles request titles that aren't in the library | Off | Shows request cards in search (needs Seerr or Ombi below). |
+| Request service | Seerr | Seerr (Jellyseerr / Overseerr) or Ombi. |
 | Seerr address / API key | — | Where Seerr runs and its API key (Seerr → Settings → General). |
+| Ombi address / API key | — | Where Ombi runs and its API key (Ombi → Settings → Ombi). |
 | Let kids profiles request titles | Off | Kids profiles don't see request cards otherwise. |
 | Match descriptions by meaning (semantic search) | Off | Also match descriptions by meaning, using the embeddings API below. |
 | Embeddings API address / model / API key | — / `nomic-embed-text` / — | An OpenAI-compatible embeddings API, e.g. Ollama. |
@@ -88,22 +91,32 @@ a progress bar while they run, then whether it worked and, if not, why.
 
 ## Requests
 
-In the JellyFlix settings, turn on **Requests** and enter the Seerr address (e.g. `http://192.168.1.10:5055`) and its
-API key (Seerr → Settings → General), then press **Save and test connection**. A panel underneath confirms the
-connection and Seerr's version, or shows Seerr's error (such as an invalid API key) and what to check.
+In the JellyFlix settings, turn on **Requests**, pick the request service (**Seerr** for Jellyseerr / Overseerr, or
+**Ombi**), enter its address (e.g. `http://192.168.1.10:5055` for Seerr, `http://192.168.1.10:3579` for Ombi) and API
+key, then press **Save and test connection**. A panel underneath confirms the connection and the service's version, or
+shows the service's own error (such as an invalid API key) and what to check.
 
 <p align="center">
 <img alt="Testing the Seerr connection" src="docs/screenshots/dashboard-requests.jpg" width="49%"/>
 <img alt="Requesting from search" src="docs/screenshots/search-requests.jpg" width="49%"/>
 </p>
+<p align="center"><img alt="Ombi settings" src="docs/screenshots/dashboard-ombi.jpg" width="60%"/></p>
 
-- Search results get a **Not in your library** row: matching movies and shows from Seerr that the library doesn't
-  have, with what's already requested or on its way. Titles that are in the library, and people, are left out.
-- **Request** asks Seerr for the movie, or every season of a show. Profiles aren't Seerr users, so the request is made
-  as the household owner's Seerr account: users imported into Seerr from Jellyfin are matched automatically; without a
-  match, the request is made as the API key's user. Seerr's own permissions and approval rules apply.
+- Search results get a **Not in your library** row: matching movies and shows that the library doesn't have, with
+  what's already requested or on its way. Titles that are in the library, and people, are left out.
+- **Request** asks for the movie, or every season of a show. Profiles aren't users of the request service, so the
+  request is made as the household owner's account there:
+  - **Seerr**: users imported into Seerr from Jellyfin are matched by their Jellyfin account automatically; without a
+    match, the request is made as the API key's user.
+  - **Ombi**: the Ombi user with the owner's Jellyfin user name (users imported from Jellyfin keep it) makes the
+    request, so their request limits and auto-approval apply; without one, the request is made as Ombi's API user,
+    labelled with the owner's name.
+- The service's own permissions, quotas and approval rules apply, and its reason for refusing a request is shown on
+  the card.
+- Ombi's search doesn't say what's already requested, so the plugin looks up the first 12 results' status in Ombi
+  (at the same time) before showing them.
 - Kids profiles don't see the row unless **Let kids profiles request titles** is on.
-- The API key stays on the server: browsers only talk to the plugin.
+- API keys stay on the server: browsers only talk to the plugin.
 
 ## Appearance
 
@@ -238,9 +251,9 @@ All endpoints use the signed-in user's session.
 | `POST` | `/JellyFlix/Profiles/{id}/Switch` | Switch this device to a profile (`{ Pin? }`). |
 | `GET` | `/JellyFlix/Recommendations` | Top Picks and Because-you-watched rows. |
 | `GET` | `/JellyFlix/Recommendations/Similar/{id}` | More Like This and the match percentage. |
-| `GET` | `/JellyFlix/Requests/Search?query=` | Titles matching a search that aren't in the library, from Seerr. |
+| `GET` | `/JellyFlix/Requests/Search?query=` | Titles matching a search that aren't in the library, from Seerr or Ombi. |
 | `POST` | `/JellyFlix/Requests` | Request a title (`{ TmdbId, MediaType: "movie" \| "tv" }`). |
-| `POST` | `/JellyFlix/Requests/Test` | Check the Seerr connection (administrators). |
+| `POST` | `/JellyFlix/Requests/Test` | Check the request service's connection (administrators). |
 | `GET` | `/JellyFlix/Search?query=&limit=` | Titles matching a description, best first. |
 | `GET` | `/JellyFlix/Search/Status` | Search index status (administrators). |
 | `POST` | `/JellyFlix/Search/Test` | Check the embeddings API (administrators). |
@@ -258,6 +271,7 @@ All endpoints use the signed-in user's session.
 
 | Version | Changes |
 | --- | --- |
+| 1.4.0 | Ombi as a request service alongside Seerr. |
 | 1.3.0 | Seasonal home pages (Halloween, Christmas, summer) with curated shelves, and the dynamic colors setting. |
 | 1.2.1 | Profile avatars: generated icons (`AvatarIcon`) and photo uploads the household owner can make for any profile. |
 | 1.2.0 | Search by description (with optional semantic search), artwork per profile, the end-credit companion. |

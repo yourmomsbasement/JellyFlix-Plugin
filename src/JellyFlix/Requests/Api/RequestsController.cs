@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace JellyFlix.Requests.Api;
 
 /// <summary>
-/// Requesting titles that aren't in the library, through Seerr.
+/// Requesting titles that aren't in the library, through Seerr or Ombi.
 /// </summary>
 [ApiController]
 [Authorize]
@@ -35,7 +35,7 @@ public class RequestsController : ControllerBase
     }
 
     /// <summary>
-    /// Finds movies and shows matching a search that aren't in the library.
+    /// Finds movies and shows matching a search that aren't in the library, from Seerr or Ombi.
     /// </summary>
     /// <param name="query">The search text.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -49,7 +49,7 @@ public class RequestsController : ControllerBase
         {
             return await _requestService.SearchAsync(userId, query, cancellationToken).ConfigureAwait(false);
         }
-        catch (SeerrException ex)
+        catch (RequestProviderException ex)
         {
             return Problem(ex);
         }
@@ -71,17 +71,17 @@ public class RequestsController : ControllerBase
             await _requestService.RequestAsync(userId, request, cancellationToken).ConfigureAwait(false);
             return NoContent();
         }
-        catch (SeerrException ex)
+        catch (RequestProviderException ex)
         {
             return Problem(ex);
         }
     }
 
     /// <summary>
-    /// Checks the Seerr connection with the saved settings.
+    /// Checks the request service's connection with the saved settings.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The Seerr version.</returns>
+    /// <returns>The service and its version.</returns>
     [HttpPost("Test")]
     [Authorize(Policy = Policies.RequiresElevation)]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -89,9 +89,9 @@ public class RequestsController : ControllerBase
     {
         try
         {
-            return new SeerrTestDto { Version = await _requestService.TestAsync(cancellationToken).ConfigureAwait(false) };
+            return await _requestService.TestAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (SeerrException ex)
+        catch (RequestProviderException ex)
         {
             return Problem(ex);
         }
@@ -100,9 +100,9 @@ public class RequestsController : ControllerBase
     private async Task<Guid> GetUserIdAsync()
         => (await _authorizationContext.GetAuthorizationInfo(HttpContext).ConfigureAwait(false)).UserId;
 
-    private ObjectResult Problem(SeerrException ex)
+    private ObjectResult Problem(RequestProviderException ex)
     {
-        // Seerr's own authentication failures mean the server's API key is wrong, not that the user is signed out
+        // The service's own authentication failures mean the server's API key is wrong, not that the user is signed out
         var status = (int)ex.StatusCode is StatusCodes.Status401Unauthorized ? StatusCodes.Status502BadGateway : (int)ex.StatusCode;
         return Problem(detail: ex.Message, statusCode: status);
     }

@@ -60,6 +60,21 @@ public class PluginConfiguration : BasePluginConfiguration
     public string SeerrApiKey { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the request service: "Seerr" or "Ombi".
+    /// </summary>
+    public string RequestsProvider { get; set; } = "Seerr";
+
+    /// <summary>
+    /// Gets or sets the Ombi address, e.g. <c>http://192.168.1.10:3579</c>.
+    /// </summary>
+    public string OmbiUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Ombi API key (Ombi → Settings → Ombi). It never leaves the server.
+    /// </summary>
+    public string OmbiApiKey { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets a value indicating whether kids profiles may request titles.
     /// </summary>
     public bool AllowKidsRequests { get; set; }
