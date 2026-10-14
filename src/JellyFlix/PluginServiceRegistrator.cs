@@ -1,5 +1,6 @@
 using System;
 using Jellyfin.Data.Events.Users;
+using JellyFlix.Appearance;
 using JellyFlix.Artwork;
 using JellyFlix.Companion;
 using JellyFlix.Configuration;
@@ -60,6 +61,9 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         // Artwork per profile
         serviceCollection.AddSingleton<ArtworkStore>();
         serviceCollection.AddSingleton<ArtworkService>();
+
+        // Seasonal themes and dynamic colors
+        serviceCollection.AddSingleton<AppearanceService>();
 
         // End-credit companion
         serviceCollection.AddSingleton<CompanionService>();

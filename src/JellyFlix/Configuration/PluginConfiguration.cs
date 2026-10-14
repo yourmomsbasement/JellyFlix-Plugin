@@ -83,4 +83,15 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets the embeddings API key, if the API needs one. It never leaves the server.
     /// </summary>
     public string EmbeddingsApiKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the home page's seasonal look: "Off", "Auto" (by date), "Halloween", "Christmas" or "Summer".
+    /// </summary>
+    public string SeasonalTheme { get; set; } = "Auto";
+
+    /// <summary>
+    /// Gets or sets a value indicating whether buttons, backgrounds and progress bars take their color from the
+    /// title's artwork.
+    /// </summary>
+    public bool DynamicColors { get; set; } = true;
 }

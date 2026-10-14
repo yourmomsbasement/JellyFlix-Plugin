@@ -18,6 +18,8 @@ that does all of this:
   anyone else. See [artwork per profile](#artwork-per-profile).
 - **End-credit companion**: when a movie ends, the next film in its collection, its extras, its soundtrack and more
   like it. See [end-credit companion](#end-credit-companion).
+- **Seasonal themes and dynamic colors**: Halloween, Christmas and summer looks for the home page with curated
+  shelves, and accent colors taken from each title's artwork. See [appearance](#appearance).
 - **Web client**: downloads the JellyFlix web client from
   [JellyFlix-Web releases](https://github.com/yourmomsbasement/JellyFlix-Web/releases), serves it in place of Jellyfin's
   own and keeps it up to date.
@@ -73,6 +75,8 @@ restart Jellyfin.
 | Let kids profiles request titles | Off | Kids profiles don't see request cards otherwise. |
 | Match descriptions by meaning (semantic search) | Off | Also match descriptions by meaning, using the embeddings API below. |
 | Embeddings API address / model / API key | — / `nomic-embed-text` / — | An OpenAI-compatible embeddings API, e.g. Ollama. |
+| Seasonal home page | Automatic | Automatic, Off, Halloween, Christmas or Summer. |
+| Dynamic interface colors | On | Accent colors from the selected title's artwork. |
 | Serve the JellyFlix web client | On | Serve JellyFlix at `/web`; off gives Jellyfin's own web client back. |
 | Install new JellyFlix web releases automatically | On | At startup and every six hours. |
 | Release repository | `yourmomsbasement/JellyFlix-Web` | Where web client releases come from. |
@@ -100,6 +104,34 @@ connection and Seerr's version, or shows Seerr's error (such as an invalid API k
   match, the request is made as the API key's user. Seerr's own permissions and approval rules apply.
 - Kids profiles don't see the row unless **Let kids profiles request titles** is on.
 - The API key stays on the server: browsers only talk to the plugin.
+
+## Appearance
+
+**Seasonal home page.** Automatic shows Halloween through October, Christmas from December 1 to New Year's Day, and
+summer from June 21 to August 31 (northern hemisphere); any season can also be forced, or turned off. In season, the
+web client gives the home page the season's accent color and artwork, and the plugin builds its curated shelves:
+
+| Season | Shelves |
+| --- | --- |
+| Halloween | **Halloween Picks** (plots, taglines and tags mentioning ghosts, witches, haunted houses, zombies…), **Not Too Scary: Family Frights** (the same, from Family and Animation), **Scream-Worthy Horror** |
+| Christmas | **Holiday Favorites** (Christmas, Santa, snow, elves, winter…), **Cozy Family Movie Night** |
+| Summer | **Summer Vibes** (beaches, vacations, surfing, islands, camp…), **Summer Blockbusters** (Action and Adventure) |
+
+Words are matched with the same stemming as search by description, so "witches" finds "witch". A title appears on one
+shelf at most, best matches and best rated first; shelves with fewer than three titles are left out. Only titles the
+profile may see are used, so kids profiles get kids' titles.
+
+<p align="center">
+<img alt="Halloween" src="docs/screenshots/home-halloween.jpg" width="32%"/>
+<img alt="Christmas" src="docs/screenshots/home-christmas.jpg" width="32%"/>
+<img alt="Summer" src="docs/screenshots/home-summer.jpg" width="32%"/>
+</p>
+
+**Dynamic interface colors.** The web client samples the selected title's artwork, finds its most prominent vivid
+color and tones it down until white text on it is readable, then uses it for buttons, progress bars and a soft
+background glow. It all happens in the browser; the plugin only stores the setting.
+
+<p align="center"><img alt="Dynamic colors" src="docs/screenshots/title-dynamic.jpg" width="70%"/></p>
 
 ## Profile avatars
 
@@ -217,6 +249,7 @@ All endpoints use the signed-in user's session.
 | `GET` | `/JellyFlix/Artwork/{id}/Options?kind=Poster\|Backdrop` | Artwork the profile can choose from. |
 | `POST` | `/JellyFlix/Artwork/{id}` | Choose artwork for the profile (`{ Kind, OptionId }`). |
 | `DELETE` | `/JellyFlix/Artwork/{id}?kind=` | Go back to the library's artwork. |
+| `GET` | `/JellyFlix/Appearance` | The current season, its curated shelves for the profile, and whether dynamic colors are on. |
 | `GET` | `/JellyFlix/Companion/{id}` | Next in the collection, extras and soundtrack for a title. |
 | `GET` | `/JellyFlix/WebUpdate` | Web Updater status (administrators). |
 | `POST` | `/JellyFlix/WebUpdate/Check` | Check for and install a web client now (administrators). |
@@ -225,6 +258,7 @@ All endpoints use the signed-in user's session.
 
 | Version | Changes |
 | --- | --- |
+| 1.3.0 | Seasonal home pages (Halloween, Christmas, summer) with curated shelves, and the dynamic colors setting. |
 | 1.2.1 | Profile avatars: generated icons (`AvatarIcon`) and photo uploads the household owner can make for any profile. |
 | 1.2.0 | Search by description (with optional semantic search), artwork per profile, the end-credit companion. |
 | 1.1.1 | Faster web client checks (stop at the first compatible release), download progress, a 15-minute download limit. |

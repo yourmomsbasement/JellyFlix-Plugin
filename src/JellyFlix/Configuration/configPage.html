@@ -67,6 +67,25 @@
                         <input is="emby-input" id="EmbeddingsApiKey" type="password" label="API key (if the API needs one)" />
                     </div>
 
+                    <h2 class="sectionTitle">Appearance</h2>
+                    <div class="selectContainer">
+                        <select is="emby-select" id="SeasonalTheme" label="Seasonal home page">
+                            <option value="Auto">Automatic (Halloween in October, Christmas in December, summer from June 21)</option>
+                            <option value="Off">Off</option>
+                            <option value="Halloween">Halloween</option>
+                            <option value="Christmas">Christmas</option>
+                            <option value="Summer">Summer</option>
+                        </select>
+                        <div class="fieldDescription">Seasonal artwork, accent color and curated shelves on the home page.</div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="DynamicColors" />
+                            <span>Dynamic interface colors</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">Buttons, backgrounds and progress bars take a subtle accent color from the selected title's artwork.</div>
+                    </div>
+
                     <h2 class="sectionTitle">Web client updates</h2>
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label>
@@ -153,6 +172,8 @@
                         page.querySelector('#SeerrApiKey').value = config.SeerrApiKey || '';
                         page.querySelector('#AllowKidsRequests').checked = config.AllowKidsRequests;
                         page.querySelector('#SemanticSearchEnabled').checked = config.SemanticSearchEnabled;
+                        page.querySelector('#SeasonalTheme').value = config.SeasonalTheme || 'Auto';
+                        page.querySelector('#DynamicColors').checked = config.DynamicColors;
                         page.querySelector('#EmbeddingsUrl').value = config.EmbeddingsUrl || '';
                         page.querySelector('#EmbeddingsModel').value = config.EmbeddingsModel || '';
                         page.querySelector('#EmbeddingsApiKey').value = config.EmbeddingsApiKey || '';
@@ -186,6 +207,8 @@
                         config.SeerrApiKey = page.querySelector('#SeerrApiKey').value.trim();
                         config.AllowKidsRequests = page.querySelector('#AllowKidsRequests').checked;
                         config.SemanticSearchEnabled = page.querySelector('#SemanticSearchEnabled').checked;
+                        config.SeasonalTheme = page.querySelector('#SeasonalTheme').value;
+                        config.DynamicColors = page.querySelector('#DynamicColors').checked;
                         config.EmbeddingsUrl = page.querySelector('#EmbeddingsUrl').value.trim();
                         config.EmbeddingsModel = page.querySelector('#EmbeddingsModel').value.trim();
                         config.EmbeddingsApiKey = page.querySelector('#EmbeddingsApiKey').value.trim();
