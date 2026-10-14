@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Threading.Tasks;
 using JellyFlix.Profiles.Api.Models;
 using MediaBrowser.Controller.Authentication;
@@ -20,16 +21,19 @@ namespace JellyFlix.Profiles.Api;
 public class ProfilesController : ControllerBase
 {
     private readonly ProfileService _profileService;
+    private readonly ProfileImageService _profileImageService;
     private readonly IAuthorizationContext _authorizationContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProfilesController"/> class.
     /// </summary>
     /// <param name="profileService">The profile service.</param>
+    /// <param name="profileImageService">The profile photo service.</param>
     /// <param name="authorizationContext">The authorization context.</param>
-    public ProfilesController(ProfileService profileService, IAuthorizationContext authorizationContext)
+    public ProfilesController(ProfileService profileService, ProfileImageService profileImageService, IAuthorizationContext authorizationContext)
     {
         _profileService = profileService;
+        _profileImageService = profileImageService;
         _authorizationContext = authorizationContext;
     }
 
@@ -92,6 +96,60 @@ public class ProfilesController : ControllerBase
         var result = await Run(async auth =>
         {
             await _profileService.DeleteProfileAsync(auth.UserId, profileId).ConfigureAwait(false);
+            return true;
+        }).ConfigureAwait(false);
+
+        return result.Result ?? NoContent();
+    }
+
+    /// <summary>
+    /// Sets a profile's photo. The body is the image itself: JPEG, PNG or WebP, up to 5 MB.
+    /// </summary>
+    /// <param name="profileId">The profile id.</param>
+    /// <response code="204">Photo set.</response>
+    /// <returns>No content.</returns>
+    [HttpPost("{profileId}/Image")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult> SetImage([FromRoute, Required] Guid profileId)
+    {
+        var result = await Run(async auth =>
+        {
+            // One byte over the limit is enough to tell it's too large
+            using var buffer = new MemoryStream();
+            var limited = new byte[81920];
+            int read;
+            while ((read = await Request.Body.ReadAsync(limited, HttpContext.RequestAborted).ConfigureAwait(false)) > 0)
+            {
+                await buffer.WriteAsync(limited.AsMemory(0, read), HttpContext.RequestAborted).ConfigureAwait(false);
+                if (buffer.Length > ProfileImageFormat.MaxBytes)
+                {
+                    throw new ProfileException(ProfileError.BadRequest, "The photo is too large.");
+                }
+            }
+
+            await _profileImageService.SetAsync(auth.UserId, profileId, buffer.ToArray()).ConfigureAwait(false);
+            return true;
+        }).ConfigureAwait(false);
+
+        return result.Result ?? NoContent();
+    }
+
+    /// <summary>
+    /// Removes a profile's photo.
+    /// </summary>
+    /// <param name="profileId">The profile id.</param>
+    /// <response code="204">Photo removed.</response>
+    /// <returns>No content.</returns>
+    [HttpDelete("{profileId}/Image")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult> RemoveImage([FromRoute, Required] Guid profileId)
+    {
+        var result = await Run(async auth =>
+        {
+            await _profileImageService.RemoveAsync(auth.UserId, profileId).ConfigureAwait(false);
             return true;
         }).ConfigureAwait(false);
 

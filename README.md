@@ -7,7 +7,7 @@ that does all of this:
 
 - **Profiles**: one household login, several Netflix-style profiles ("Who's watching?"). Each profile is a hidden
   Jellyfin user, so watch history, Continue Watching, Next Up and parental controls are tracked per profile. Optional
-  4-digit PINs and kids profiles.
+  4-digit PINs and kids profiles, and avatars: generated icons on a choice of colors, or an uploaded photo.
 - **Recommendations**: Top Picks, "Because you watched…", "More Like This" and the match percentage, learned from each
   profile's history. See [how it works](#how-recommendations-work).
 - **Requests**: search shows movies and shows that aren't in the library, with a **Request** button that goes
@@ -101,6 +101,16 @@ connection and Seerr's version, or shows Seerr's error (such as an invalid API k
 - Kids profiles don't see the row unless **Let kids profiles request titles** is on.
 - The API key stays on the server: browsers only talk to the plugin.
 
+## Profile avatars
+
+In **Manage Profiles**, each profile picks one of 18 generated icons on one of 10 colors, rolls a random pair with
+**Surprise me**, or uploads a photo. The web client crops photos to a square and shrinks them to 512 px before
+uploading. The plugin accepts JPEG, PNG and WebP, recognized by their content rather than the file name, and stores
+the photo as the profile's Jellyfin user image, so other Jellyfin apps show it too. Jellyfin's own image endpoint only
+lets administrators change other users' images; the plugin's lets the household owner change any profile's.
+
+<p align="center"><img alt="Choosing an avatar" src="docs/screenshots/profile-editor.jpg" width="70%"/></p>
+
 ## Search by description
 
 Search also looks for titles whose metadata matches what was typed, so "space movie with a stranded astronaut" finds a
@@ -191,6 +201,8 @@ All endpoints use the signed-in user's session.
 | `POST` | `/JellyFlix/Profiles` | Add a profile (owner). |
 | `POST` | `/JellyFlix/Profiles/{id}` | Change a profile (owner, or the profile itself). |
 | `DELETE` | `/JellyFlix/Profiles/{id}` | Remove a profile and its watch history (owner). |
+| `POST` | `/JellyFlix/Profiles/{id}/Image` | Set a profile's photo; the body is a JPEG, PNG or WebP image up to 5 MB (owner, or the profile itself). |
+| `DELETE` | `/JellyFlix/Profiles/{id}/Image` | Remove a profile's photo. |
 | `POST` | `/JellyFlix/Profiles/{id}/Switch` | Switch this device to a profile (`{ Pin? }`). |
 | `GET` | `/JellyFlix/Recommendations` | Top Picks and Because-you-watched rows. |
 | `GET` | `/JellyFlix/Recommendations/Similar/{id}` | More Like This and the match percentage. |
@@ -213,6 +225,7 @@ All endpoints use the signed-in user's session.
 
 | Version | Changes |
 | --- | --- |
+| 1.2.1 | Profile avatars: generated icons (`AvatarIcon`) and photo uploads the household owner can make for any profile. |
 | 1.2.0 | Search by description (with optional semantic search), artwork per profile, the end-credit companion. |
 | 1.1.1 | Faster web client checks (stop at the first compatible release), download progress, a 15-minute download limit. |
 | 1.1.0 | Requests through Seerr from search. |

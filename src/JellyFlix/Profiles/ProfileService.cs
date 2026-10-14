@@ -102,6 +102,7 @@ public sealed partial class ProfileService : IDisposable
     {
         var name = ValidateName(request.Name);
         ValidateColor(request.AvatarColor);
+        ValidateIcon(request.AvatarIcon);
         if (request.Pin is not null && !PinHasher.IsValidPin(request.Pin))
         {
             throw new ProfileException(ProfileError.BadRequest, "PIN must be four digits.");
@@ -140,6 +141,7 @@ public sealed partial class ProfileService : IDisposable
                 UserId = user.Id,
                 DisplayName = name,
                 AvatarColor = request.AvatarColor ?? _avatarColors[household.Profiles.Count % _avatarColors.Length],
+                AvatarIcon = string.IsNullOrEmpty(request.AvatarIcon) ? null : request.AvatarIcon,
                 PinHash = request.Pin is null ? null : PinHasher.Hash(request.Pin),
                 IsKids = request.IsKids
             };
@@ -171,6 +173,7 @@ public sealed partial class ProfileService : IDisposable
     {
         var name = request.Name is null ? null : ValidateName(request.Name);
         ValidateColor(request.AvatarColor);
+        ValidateIcon(request.AvatarIcon);
         if (request.Pin is not null && !PinHasher.IsValidPin(request.Pin))
         {
             throw new ProfileException(ProfileError.BadRequest, "PIN must be four digits.");
@@ -224,6 +227,11 @@ public sealed partial class ProfileService : IDisposable
             if (request.AvatarColor is not null)
             {
                 entry.AvatarColor = request.AvatarColor;
+            }
+
+            if (request.AvatarIcon is not null)
+            {
+                entry.AvatarIcon = request.AvatarIcon.Length == 0 ? null : request.AvatarIcon;
             }
 
             if (request.RemovePin)
@@ -382,6 +390,37 @@ public sealed partial class ProfileService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Checks that the caller may change a profile's picture: the owner may change any profile, others only their own.
+    /// </summary>
+    /// <param name="callerId">The calling user id.</param>
+    /// <param name="profileId">The profile to change.</param>
+    /// <returns>A task that fails with a <see cref="ProfileException"/> when the caller may not.</returns>
+    public async Task EnsureCanEditAsync(Guid callerId, Guid profileId)
+    {
+        if (profileId.Equals(callerId))
+        {
+            return;
+        }
+
+        await _lock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var households = await GetHouseholdsAsync().ConfigureAwait(false);
+            var household = FindByMember(households, callerId)
+                ?? throw new ProfileException(ProfileError.NotFound, "Profile not found.");
+            FindProfile(household, profileId);
+            if (!CanManage(household, callerId))
+            {
+                throw new ProfileException(ProfileError.Forbidden, "Only the household owner can change other profiles.");
+            }
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
     /// <inheritdoc />
     public void Dispose() => _lock.Dispose();
 
@@ -410,6 +449,17 @@ public sealed partial class ProfileService : IDisposable
             throw new ProfileException(ProfileError.BadRequest, "Avatar color must be #RRGGBB.");
         }
     }
+
+    private static void ValidateIcon(string? icon)
+    {
+        if (!string.IsNullOrEmpty(icon) && !IconRegex().IsMatch(icon))
+        {
+            throw new ProfileException(ProfileError.BadRequest, "Avatar icon must be a short name such as \"cat\".");
+        }
+    }
+
+    [GeneratedRegex("^[a-z0-9-]{1,32}$")]
+    private static partial Regex IconRegex();
 
     [GeneratedRegex("^#[0-9A-Fa-f]{6}$")]
     private static partial Regex ColorRegex();
@@ -520,6 +570,7 @@ public sealed partial class ProfileService : IDisposable
             Id = entry.UserId,
             Name = entry.DisplayName,
             AvatarColor = entry.AvatarColor,
+            AvatarIcon = entry.AvatarIcon,
             PrimaryImageTag = user is null ? null : _userManager.GetUserDto(user).PrimaryImageTag,
             HasPin = entry.PinHash is not null,
             IsKids = entry.IsKids,

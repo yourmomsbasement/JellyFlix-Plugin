@@ -41,6 +41,7 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<IHouseholdStore, JsonHouseholdStore>();
         serviceCollection.AddSingleton(sp => new PinAttemptLimiter(sp.GetRequiredService<TimeProvider>()));
         serviceCollection.AddSingleton<ProfileService>();
+        serviceCollection.AddSingleton<ProfileImageService>();
         serviceCollection.AddScoped<IEventConsumer<UserDeletedEventArgs>, UserDeletedConsumer>();
 
         // Recommendations

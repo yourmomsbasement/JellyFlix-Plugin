@@ -196,6 +196,36 @@ public sealed class ProfileServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task AvatarIcon_IsKeptChangedAndCleared()
+    {
+        var sam = await _service.CreateProfileAsync(_owner.Id, new CreateProfileDto { Name = "Sam", AvatarIcon = "cat" });
+        Assert.Equal("cat", sam.AvatarIcon);
+
+        var robot = await _service.UpdateProfileAsync(sam.Id, sam.Id, new UpdateProfileDto { AvatarIcon = "robot" });
+        var renamed = await _service.UpdateProfileAsync(sam.Id, sam.Id, new UpdateProfileDto { Name = "Sammy" });
+        var cleared = await _service.UpdateProfileAsync(sam.Id, sam.Id, new UpdateProfileDto { AvatarIcon = string.Empty });
+
+        Assert.Equal("robot", robot.AvatarIcon);
+        Assert.Equal("robot", renamed.AvatarIcon);
+        Assert.Null(cleared.AvatarIcon);
+        var ex = await Assert.ThrowsAsync<ProfileException>(() => _service.UpdateProfileAsync(sam.Id, sam.Id, new UpdateProfileDto { AvatarIcon = "../evil" }));
+        Assert.Equal(ProfileError.BadRequest, ex.Error);
+    }
+
+    [Fact]
+    public async Task EnsureCanEdit_OwnerAndSelfOnly()
+    {
+        var sam = await _service.CreateProfileAsync(_owner.Id, new CreateProfileDto { Name = "Sam" });
+        var leo = await _service.CreateProfileAsync(_owner.Id, new CreateProfileDto { Name = "Leo" });
+
+        await _service.EnsureCanEditAsync(_owner.Id, sam.Id);
+        await _service.EnsureCanEditAsync(sam.Id, sam.Id);
+        var ex = await Assert.ThrowsAsync<ProfileException>(() => _service.EnsureCanEditAsync(sam.Id, leo.Id));
+
+        Assert.Equal(ProfileError.Forbidden, ex.Error);
+    }
+
+    [Fact]
     public async Task UpdateProfile_OwnerCanSetOwnPinBeforeAddingProfiles()
     {
         var updated = await _service.UpdateProfileAsync(_owner.Id, _owner.Id, new UpdateProfileDto { Pin = "1234" });

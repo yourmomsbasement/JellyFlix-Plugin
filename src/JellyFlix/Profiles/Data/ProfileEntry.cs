@@ -23,6 +23,11 @@ public class ProfileEntry
     public string AvatarColor { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the generated avatar's design, e.g. <c>cat</c>; null for the smiley.
+    /// </summary>
+    public string? AvatarIcon { get; set; }
+
+    /// <summary>
     /// Gets or sets the salted PIN hash, or null when the profile has no PIN.
     /// </summary>
     public string? PinHash { get; set; }

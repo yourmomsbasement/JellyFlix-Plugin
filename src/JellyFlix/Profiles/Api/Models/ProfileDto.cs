@@ -23,6 +23,11 @@ public class ProfileDto
     public string AvatarColor { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the generated avatar's design, e.g. <c>cat</c>; null for the smiley. A photo, when there is one, is shown instead.
+    /// </summary>
+    public string? AvatarIcon { get; set; }
+
+    /// <summary>
     /// Gets or sets the primary image tag of the backing user, if it has an avatar image.
     /// </summary>
     public string? PrimaryImageTag { get; set; }

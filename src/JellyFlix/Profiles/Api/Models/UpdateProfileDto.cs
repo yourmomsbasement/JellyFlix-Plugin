@@ -16,6 +16,11 @@ public class UpdateProfileDto
     public string? AvatarColor { get; set; }
 
     /// <summary>
+    /// Gets or sets the generated avatar's design, e.g. <c>cat</c>; an empty string goes back to the smiley.
+    /// </summary>
+    public string? AvatarIcon { get; set; }
+
+    /// <summary>
     /// Gets or sets whether this is a kids profile. Only the household owner may change it.
     /// </summary>
     public bool? IsKids { get; set; }

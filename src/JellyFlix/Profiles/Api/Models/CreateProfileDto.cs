@@ -16,6 +16,11 @@ public class CreateProfileDto
     public string? AvatarColor { get; set; }
 
     /// <summary>
+    /// Gets or sets the generated avatar's design, e.g. <c>cat</c>.
+    /// </summary>
+    public string? AvatarIcon { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether this is a kids profile.
     /// </summary>
     public bool IsKids { get; set; }
