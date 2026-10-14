@@ -35,12 +35,16 @@ at `/web` in place of the stock one, on Linux, Docker and Windows alike: no `--w
 copying. New releases are installed automatically at startup and every six hours, and Jellyfin package upgrades no
 longer replace the JellyFlix web client.
 
-Settings live in the dashboard's **JellyFlix** section (or **Dashboard → Plugins → JellyFlix**):
+Settings live under **JellyFlix → Settings** in the dashboard's side menu (or **Dashboard → Plugins → JellyFlix**), and
+the dashboard home gets a JellyFlix card. See [settings](#settings).
 
 <p align="center">
 <img alt="Dashboard" src="docs/screenshots/dashboard.jpg" width="49%"/>
 <img alt="JellyFlix settings" src="docs/screenshots/dashboard-jellyflix.jpg" width="49%"/>
 </p>
+
+**Updating:** new plugin versions show up in **Dashboard → Plugins**; update JellyFlix there and restart Jellyfin.
+The settings page tells you when a setting needs a newer plugin than the one installed.
 
 **Upgrading from the separate *JellyFlix Profiles* / *JellyFlix Recommendations* plugins:** just install this one.
 On its first start it removes the old plugins, carries their settings over and asks for one more restart (the dashboard
@@ -51,10 +55,34 @@ the web client itself is broken and you can't reach the dashboard, set `<ServeWe
 `plugins/configurations/JellyFlix.xml` in Jellyfin's data folder (or delete the `jellyflix-web` folder there) and
 restart Jellyfin.
 
+## Settings
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Maximum profiles per household | 5 | Including the account owner's own profile. |
+| Highest parental rating score for kids profiles | 10 | 10 is PG / TV-PG; unrated titles are always hidden from kids profiles. |
+| Let non-administrator accounts create profiles | On | Otherwise only administrators can have profiles. |
+| Let profiles request titles that aren't in the library | Off | Shows request cards in search (needs Seerr below). |
+| Seerr address / API key | — | Where Seerr runs and its API key (Seerr → Settings → General). |
+| Let kids profiles request titles | Off | Kids profiles don't see request cards otherwise. |
+| Serve the JellyFlix web client | On | Serve JellyFlix at `/web`; off gives Jellyfin's own web client back. |
+| Install new JellyFlix web releases automatically | On | At startup and every six hours. |
+| Release repository | `yourmomsbasement/JellyFlix-Web` | Where web client releases come from. |
+
+Saving reads the settings back from the server and names any it didn't keep (for example, a setting an older plugin
+doesn't have). **Save and test connection** and **Check for updates now** each show their result in a panel underneath:
+a progress bar while they run, then whether it worked and, if not, why.
+
 ## Requests
 
 In the JellyFlix settings, turn on **Requests** and enter the Seerr address (e.g. `http://192.168.1.10:5055`) and its
-API key (Seerr → Settings → General), then press **Save and test connection**.
+API key (Seerr → Settings → General), then press **Save and test connection**. A panel underneath confirms the
+connection and Seerr's version, or shows Seerr's error (such as an invalid API key) and what to check.
+
+<p align="center">
+<img alt="Testing the Seerr connection" src="docs/screenshots/dashboard-requests.jpg" width="49%"/>
+<img alt="Requesting from search" src="docs/screenshots/search-requests.jpg" width="49%"/>
+</p>
 
 - Search results get a **Not in your library** row: matching movies and shows from Seerr that the library doesn't
   have, with what's already requested or on its way. Titles that are in the library, and people, are left out.
@@ -64,10 +92,14 @@ API key (Seerr → Settings → General), then press **Save and test connection*
 - Kids profiles don't see the row unless **Let kids profiles request titles** is on.
 - The API key stays on the server: browsers only talk to the plugin.
 
-## How the web updater stays safe
+## How the web updater works
 
-- Only releases built for the running Jellyfin version (major.minor) are installed.
-- Every download is checked against the SHA-256 published with the release.
+- Releases are read newest first, and the check stops at the first one built for the running Jellyfin version
+  (major.minor), so a check normally downloads one small `release.json` and, if it's new, the ~36 MB client.
+- The **Update JellyFlix web client** scheduled task (Dashboard → Scheduled Tasks → JellyFlix) shows its progress
+  while the client downloads. A download that stalls gives up after 15 minutes, so it never blocks later checks.
+- Only releases built for the running Jellyfin version are installed, and every download is checked against the SHA-256
+  published with the release.
 - The new client is unpacked next to the old one and swapped in with a folder rename, so a failed update never leaves a
   half-written client. The installed build is recorded in `jellyflix-release.json`.
 - It lives in `jellyflix-web` in Jellyfin's data folder (`/var/lib/jellyfin`, `/config` in Docker,
@@ -102,6 +134,15 @@ All endpoints use the signed-in user's session.
 | `GET` | `/JellyFlix/WebUpdate` | Web Updater status (administrators). |
 | `POST` | `/JellyFlix/WebUpdate/Check` | Check for and install a web client now (administrators). |
 
+## Versions
+
+| Version | Changes |
+| --- | --- |
+| 1.1.1 | Faster web client checks (stop at the first compatible release), download progress, a 15-minute download limit. |
+| 1.1.0 | Requests through Seerr from search. |
+| 1.0.1 | Serves the web client itself (no `--webdir`), removes the old separate plugins and carries their settings over. |
+| 1.0.0 | Profiles, recommendations and the web updater in one plugin. |
+
 ## Development
 
 The plugin builds against the JellyFlix server fork, included as the `jellyfin-server` submodule, so it always matches
@@ -114,5 +155,6 @@ dotnet test JellyFlix.slnx
 dotnet build src/JellyFlix -c Release   # → src/JellyFlix/bin/Release/net10.0/JellyFlix.dll
 ```
 
-Releasing: push a tag such as `v1.0.1`, or run the Release workflow from the Actions tab with version `1.0.1`. The release workflow tests, builds `jellyflix_1.0.1.0.zip`, attaches it to a
-GitHub release and adds it to `manifest.json`, which Jellyfin's catalog reads.
+Releasing: push a tag such as `v1.2.0`, or run the **Release** workflow from the Actions tab with version `1.2.0`. The
+workflow tests, builds `jellyflix_1.2.0.0.zip`, attaches it to a GitHub release and adds it to `manifest.json`, which
+Jellyfin's catalog reads.
