@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +41,7 @@ public class GitHubReleaseSource : IReleaseSource
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<WebRelease>> GetReleasesAsync(CancellationToken cancellationToken)
+    public async IAsyncEnumerable<WebRelease> GetReleasesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var config = _configuration();
         var url = new Uri($"{config.GitHubApiUrl.TrimEnd('/')}/repos/{config.WebReleasesRepository}/releases?per_page={ReleasesToScan}");
@@ -49,11 +49,13 @@ public class GitHubReleaseSource : IReleaseSource
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 
         var client = _httpClientFactory.CreateClient(NamedClient.Default);
-        using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        var releases = await response.Content.ReadFromJsonAsync<List<GitHubRelease>>(cancellationToken).ConfigureAwait(false) ?? [];
+        List<GitHubRelease> releases;
+        using (var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false))
+        {
+            response.EnsureSuccessStatusCode();
+            releases = await response.Content.ReadFromJsonAsync<List<GitHubRelease>>(cancellationToken).ConfigureAwait(false) ?? [];
+        }
 
-        var result = new List<WebRelease>();
         foreach (var release in releases
             .Where(r => !r.Draft && r.TagName.StartsWith(TagPrefix, StringComparison.Ordinal))
             .OrderByDescending(r => r.PublishedAt))
@@ -66,29 +68,31 @@ public class GitHubReleaseSource : IReleaseSource
                 continue;
             }
 
-            var infoStream = await DownloadAsync(info.BrowserDownloadUrl, cancellationToken).ConfigureAwait(false);
-            await using (infoStream.ConfigureAwait(false))
+            // Each release's metadata is a separate download, so it is only fetched when the caller gets this far
+            var metadata = await client.GetFromJsonAsync<ReleaseMetadata>(info.BrowserDownloadUrl, cancellationToken).ConfigureAwait(false);
+            if (metadata is not null)
             {
-                var metadata = await System.Text.Json.JsonSerializer.DeserializeAsync<ReleaseMetadata>(infoStream, cancellationToken: cancellationToken).ConfigureAwait(false);
-                if (metadata is null)
-                {
-                    continue;
-                }
-
-                result.Add(new WebRelease(metadata.Version, metadata.Commit, metadata.ServerVersion, release.PublishedAt, zip.BrowserDownloadUrl, sha.BrowserDownloadUrl));
+                yield return new WebRelease(metadata.Version, metadata.Commit, metadata.ServerVersion, release.PublishedAt, zip.BrowserDownloadUrl, sha.BrowserDownloadUrl);
             }
         }
-
-        return result;
     }
 
     /// <inheritdoc />
-    public async Task<Stream> DownloadAsync(Uri url, CancellationToken cancellationToken)
+    public async Task<WebDownload> DownloadAsync(Uri url, CancellationToken cancellationToken)
     {
         var client = _httpClientFactory.CreateClient(NamedClient.Default);
         var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            return new WebDownload(content, response.Content.Headers.ContentLength, response);
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 
     private sealed class GitHubRelease

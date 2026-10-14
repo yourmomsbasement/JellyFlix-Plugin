@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -64,6 +66,23 @@ public sealed class WebUpdateServiceTests : IDisposable
         Assert.NotNull(status.Installed);
         Assert.False(status.IsServedByPlugin);
         Assert.False(status.IsServerUsingInstall);
+    }
+
+    [Fact]
+    public async Task StopsReadingReleasesAtTheFirstOneForThisServer()
+    {
+        _source.Add("2026.10.01.1", "13.0", Zip(("index.html", "old")));
+        _source.Add("2026.10.02.1", "13.0", Zip(("index.html", "older")));
+        _source.Add("2026.10.03.1", "13.0", Zip(("index.html", "newest")));
+        var progress = new List<double>();
+
+        var status = await _service.CheckAndInstallAsync(CancellationToken.None, new SyncProgress(progress.Add));
+
+        Assert.Equal("2026.10.03.1", status.Installed?.Version);
+        Assert.Equal(1, _source.ReleasesRead);
+        Assert.Equal(0, progress[0]);
+        Assert.True(progress.SequenceEqual(progress.Order()), "progress only moves forward");
+        Assert.Equal(95, progress[^1]);
     }
 
     [Fact]
@@ -167,12 +186,21 @@ public sealed class WebUpdateServiceTests : IDisposable
         return buffer.ToArray();
     }
 
+    /// <summary>Reports straight away, unlike <see cref="Progress{T}"/>.</summary>
+    private sealed class SyncProgress(Action<double> report) : IProgress<double>
+    {
+        public void Report(double value) => report(value);
+    }
+
     private sealed class FakeSource : IReleaseSource
     {
         private readonly List<WebRelease> _releases = [];
         private readonly Dictionary<Uri, byte[]> _files = [];
 
         public int Downloads { get; private set; }
+
+        /// <summary>How many releases were read; releases older than the one installed shouldn't be.</summary>
+        public int ReleasesRead { get; private set; }
 
         public void Add(string version, string serverVersion, byte[] zip, string? checksumOverride = null)
         {
@@ -185,13 +213,21 @@ public sealed class WebUpdateServiceTests : IDisposable
             _releases.Insert(0, new WebRelease(version, "commit-" + version, serverVersion, DateTimeOffset.UtcNow, zipUrl, shaUrl));
         }
 
-        public Task<IReadOnlyList<WebRelease>> GetReleasesAsync(CancellationToken cancellationToken)
-            => Task.FromResult<IReadOnlyList<WebRelease>>(_releases.ToArray());
+        public async IAsyncEnumerable<WebRelease> GetReleasesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            foreach (var release in _releases.ToArray())
+            {
+                await Task.Yield();
+                ReleasesRead++;
+                yield return release;
+            }
+        }
 
-        public Task<Stream> DownloadAsync(Uri url, CancellationToken cancellationToken)
+        public Task<WebDownload> DownloadAsync(Uri url, CancellationToken cancellationToken)
         {
             Downloads++;
-            return Task.FromResult<Stream>(new MemoryStream(_files[url]));
+            var bytes = _files[url];
+            return Task.FromResult(new WebDownload(new MemoryStream(bytes), bytes.Length));
         }
     }
 }

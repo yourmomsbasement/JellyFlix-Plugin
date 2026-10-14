@@ -43,7 +43,7 @@ public class WebUpdateTask : IScheduledTask
     {
         if (_configuration().WebUpdatesEnabled)
         {
-            await _service.CheckAndInstallAsync(cancellationToken).ConfigureAwait(false);
+            await _service.CheckAndInstallAsync(cancellationToken, progress).ConfigureAwait(false);
         }
 
         progress.Report(100);

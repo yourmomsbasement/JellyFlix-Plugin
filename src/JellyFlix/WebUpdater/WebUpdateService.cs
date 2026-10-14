@@ -32,6 +32,11 @@ public sealed class WebUpdateService : IDisposable
 
     private const string InstallFolderName = "jellyflix-web";
 
+    /// <summary>
+    /// A download that takes longer than this has stalled; give up so later checks aren't blocked behind it.
+    /// </summary>
+    private static readonly TimeSpan _downloadTimeout = TimeSpan.FromMinutes(15);
+
     private readonly IReleaseSource _source;
     private readonly IApplicationPaths _applicationPaths;
     private readonly Func<Version> _serverVersion;
@@ -109,13 +114,14 @@ public sealed class WebUpdateService : IDisposable
     /// Checks for a newer compatible release and installs it.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="progress">Reports progress from 0 to 100, e.g. to the scheduled task.</param>
     /// <returns>The status afterwards.</returns>
-    public async Task<WebUpdateStatus> CheckAndInstallAsync(CancellationToken cancellationToken)
+    public async Task<WebUpdateStatus> CheckAndInstallAsync(CancellationToken cancellationToken, IProgress<double>? progress = null)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            _lastResult = await CheckAndInstallCoreAsync(cancellationToken).ConfigureAwait(false);
+            _lastResult = await CheckAndInstallCoreAsync(progress, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -170,19 +176,33 @@ public sealed class WebUpdateService : IDisposable
         }
     }
 
-    private async Task<string> CheckAndInstallCoreAsync(CancellationToken cancellationToken)
+    private async Task<string> CheckAndInstallCoreAsync(IProgress<double>? progress, CancellationToken cancellationToken)
     {
         var server = _serverVersion();
         var serverVersion = $"{server.Major}.{server.Minor}";
-        var releases = await _source.GetReleasesAsync(cancellationToken).ConfigureAwait(false);
-        var target = releases.FirstOrDefault(r => r.ServerVersion == serverVersion);
+        progress?.Report(0);
+
+        // Newest first: the first release built for this server is the one to install
+        WebRelease? newest = null;
+        WebRelease? target = null;
+        await foreach (var release in _source.GetReleasesAsync(cancellationToken).ConfigureAwait(false))
+        {
+            newest ??= release;
+            if (release.ServerVersion == serverVersion)
+            {
+                target = release;
+                break;
+            }
+        }
+
         _latestVersion = target?.Version;
+        progress?.Report(5);
 
         if (target is null)
         {
-            return releases.Count == 0
+            return newest is null
                 ? "No JellyFlix web releases found."
-                : $"No JellyFlix web release is built for Jellyfin {serverVersion} yet (newest is for {releases[0].ServerVersion}).";
+                : $"No JellyFlix web release is built for Jellyfin {serverVersion} yet (newest is for {newest.ServerVersion}).";
         }
 
         var installed = ReadInstalled(InstallPath);
@@ -191,13 +211,16 @@ public sealed class WebUpdateService : IDisposable
             return $"Up to date ({installed.Version}).";
         }
 
-        await InstallAsync(target, cancellationToken).ConfigureAwait(false);
+        await InstallAsync(target, progress, cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Installed JellyFlix web {Version} ({Commit}) into {Path}", target.Version, target.Commit, InstallPath);
         return $"Installed {target.Version}.";
     }
 
-    private async Task InstallAsync(WebRelease release, CancellationToken cancellationToken)
+    private async Task InstallAsync(WebRelease release, IProgress<double>? progress, CancellationToken cancellationToken)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(_downloadTimeout);
+
         var download = InstallPath + ".download.zip";
         var staging = InstallPath + ".staging";
         var previous = InstallPath + ".previous";
@@ -206,29 +229,37 @@ public sealed class WebUpdateService : IDisposable
         {
             // The published checksum: the first token of the .sha256 file
             string expected;
-            var shaStream = await _source.DownloadAsync(release.Sha256Url, cancellationToken).ConfigureAwait(false);
-            await using (shaStream.ConfigureAwait(false))
+            var sha = await _source.DownloadAsync(release.Sha256Url, timeout.Token).ConfigureAwait(false);
+            await using (sha.ConfigureAwait(false))
             {
-                using var reader = new StreamReader(shaStream, Encoding.UTF8);
-                expected = (await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).Trim().Split(' ', '\t', '\n')[0];
+                using var reader = new StreamReader(sha.Content, Encoding.UTF8);
+                expected = (await reader.ReadToEndAsync(timeout.Token).ConfigureAwait(false)).Trim().Split(' ', '\t', '\n')[0];
             }
 
             // Download and hash in one pass
             Directory.CreateDirectory(Path.GetDirectoryName(download)!);
             string actual;
-            var zipStream = await _source.DownloadAsync(release.ZipUrl, cancellationToken).ConfigureAwait(false);
-            await using (zipStream.ConfigureAwait(false))
+            var zip = await _source.DownloadAsync(release.ZipUrl, timeout.Token).ConfigureAwait(false);
+            await using (zip.ConfigureAwait(false))
             {
                 var file = File.Create(download);
                 await using (file.ConfigureAwait(false))
                 {
                     using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
                     var buffer = new byte[81920];
+                    long received = 0;
                     int read;
-                    while ((read = await zipStream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+                    while ((read = await zip.Content.ReadAsync(buffer, timeout.Token).ConfigureAwait(false)) > 0)
                     {
                         hash.AppendData(buffer, 0, read);
-                        await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+                        await file.WriteAsync(buffer.AsMemory(0, read), timeout.Token).ConfigureAwait(false);
+
+                        // The download is most of the work: 5-85%
+                        received += read;
+                        if (zip.Length > 0)
+                        {
+                            progress?.Report(5 + (80.0 * Math.Min(received, zip.Length.Value) / zip.Length.Value));
+                        }
                     }
 
                     actual = Convert.ToHexStringLower(hash.GetHashAndReset());
@@ -241,8 +272,10 @@ public sealed class WebUpdateService : IDisposable
             }
 
             // Unpack next to the install folder (ExtractToDirectory refuses entries that escape the folder)
+            progress?.Report(85);
             DeleteIfExists(staging);
             await ZipFile.ExtractToDirectoryAsync(download, staging, cancellationToken).ConfigureAwait(false);
+            progress?.Report(95);
             if (!File.Exists(Path.Combine(staging, "index.html")))
             {
                 throw new InvalidDataException($"Release {release.Version} has no index.html at its root.");

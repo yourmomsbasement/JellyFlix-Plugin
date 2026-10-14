@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,17 +11,18 @@ namespace JellyFlix.WebUpdater;
 public interface IReleaseSource
 {
     /// <summary>
-    /// Lists recent releases, newest first.
+    /// Lists recent releases, newest first. Releases are read one at a time, so callers can stop at the first one they
+    /// can use.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The releases.</returns>
-    Task<IReadOnlyList<WebRelease>> GetReleasesAsync(CancellationToken cancellationToken);
+    IAsyncEnumerable<WebRelease> GetReleasesAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Downloads a release asset.
     /// </summary>
     /// <param name="url">The asset URL.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The asset contents; the caller disposes it.</returns>
-    Task<Stream> DownloadAsync(Uri url, CancellationToken cancellationToken);
+    /// <returns>The download; the caller disposes it.</returns>
+    Task<WebDownload> DownloadAsync(Uri url, CancellationToken cancellationToken);
 }
