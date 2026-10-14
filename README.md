@@ -3,13 +3,15 @@
 # JellyFlix plugin
 
 The server side of [JellyFlix](https://github.com/yourmomsbasement/JellyFlix-Web), a Netflix-style Jellyfin. One plugin
-that does three things:
+that does four things:
 
 - **Profiles**: one household login, several Netflix-style profiles ("Who's watching?"). Each profile is a hidden
   Jellyfin user, so watch history, Continue Watching, Next Up and parental controls are tracked per profile. Optional
   4-digit PINs and kids profiles.
 - **Recommendations**: Top Picks, "Because you watched…", "More Like This" and the match percentage, learned from each
   profile's history. See [how it works](#how-recommendations-work).
+- **Requests**: search shows movies and shows that aren't in the library, with a **Request** button that goes
+  through [Seerr](https://github.com/seerr-team/seerr) (Jellyseerr / Overseerr). See [requests](#requests).
 - **Web client**: downloads the JellyFlix web client from
   [JellyFlix-Web releases](https://github.com/yourmomsbasement/JellyFlix-Web/releases), serves it in place of Jellyfin's
   own and keeps it up to date.
@@ -49,6 +51,19 @@ the web client itself is broken and you can't reach the dashboard, set `<ServeWe
 `plugins/configurations/JellyFlix.xml` in Jellyfin's data folder (or delete the `jellyflix-web` folder there) and
 restart Jellyfin.
 
+## Requests
+
+In the JellyFlix settings, turn on **Requests** and enter the Seerr address (e.g. `http://192.168.1.10:5055`) and its
+API key (Seerr → Settings → General), then press **Save and test connection**.
+
+- Search results get a **Not in your library** row: matching movies and shows from Seerr that the library doesn't
+  have, with what's already requested or on its way. Titles that are in the library, and people, are left out.
+- **Request** asks Seerr for the movie, or every season of a show. Profiles aren't Seerr users, so the request is made
+  as the household owner's Seerr account: users imported into Seerr from Jellyfin are matched automatically; without a
+  match, the request is made as the API key's user. Seerr's own permissions and approval rules apply.
+- Kids profiles don't see the row unless **Let kids profiles request titles** is on.
+- The API key stays on the server: browsers only talk to the plugin.
+
 ## How the web updater stays safe
 
 - Only releases built for the running Jellyfin version (major.minor) are installed.
@@ -81,6 +96,9 @@ All endpoints use the signed-in user's session.
 | `POST` | `/JellyFlix/Profiles/{id}/Switch` | Switch this device to a profile (`{ Pin? }`). |
 | `GET` | `/JellyFlix/Recommendations` | Top Picks and Because-you-watched rows. |
 | `GET` | `/JellyFlix/Recommendations/Similar/{id}` | More Like This and the match percentage. |
+| `GET` | `/JellyFlix/Requests/Search?query=` | Titles matching a search that aren't in the library, from Seerr. |
+| `POST` | `/JellyFlix/Requests` | Request a title (`{ TmdbId, MediaType: "movie" \| "tv" }`). |
+| `POST` | `/JellyFlix/Requests/Test` | Check the Seerr connection (administrators). |
 | `GET` | `/JellyFlix/WebUpdate` | Web Updater status (administrators). |
 | `POST` | `/JellyFlix/WebUpdate/Check` | Check for and install a web client now (administrators). |
 
