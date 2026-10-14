@@ -9,6 +9,7 @@ import json
 import sys
 
 GUID = "c1a2981e-3ba2-44c5-9360-83cf293c2a13"
+IMAGE_URL = "https://raw.githubusercontent.com/yourmomsbasement/JellyFlix-Plugin/main/images/jellyflix.png"
 
 
 def main(manifest_path, zip_path, version, source_url, target_abi, changelog=""):
@@ -30,6 +31,8 @@ def main(manifest_path, zip_path, version, source_url, target_abi, changelog="")
             "versions": [],
         }
         manifest.append(plugin)
+
+    plugin["imageUrl"] = IMAGE_URL
 
     with open(zip_path, "rb") as f:
         checksum = hashlib.md5(f.read()).hexdigest()  # Jellyfin verifies plugin downloads with MD5

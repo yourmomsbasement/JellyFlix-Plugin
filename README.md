@@ -1,35 +1,53 @@
+<p align="center"><img alt="JellyFlix" src="images/banner.png"/></p>
+
 # JellyFlix plugin
 
-The server side of [JellyFlix](https://github.com/yourmomsbasement/JellyFlix-Web), a Netflix-style Jellyfin. One plugin with three parts:
+The server side of [JellyFlix](https://github.com/yourmomsbasement/JellyFlix-Web), a Netflix-style Jellyfin. One plugin
+that does three things:
 
 - **Profiles**: one household login, several Netflix-style profiles ("Who's watching?"). Each profile is a hidden
   Jellyfin user, so watch history, Continue Watching, Next Up and parental controls are tracked per profile. Optional
   4-digit PINs and kids profiles.
 - **Recommendations**: Top Picks, "Because you watched…", "More Like This" and the match percentage, learned from each
   profile's history. See [how it works](#how-recommendations-work).
-- **Web Updater**: keeps the JellyFlix web client up to date from
-  [JellyFlix-Web releases](https://github.com/yourmomsbasement/JellyFlix-Web/releases).
+- **Web client**: downloads the JellyFlix web client from
+  [JellyFlix-Web releases](https://github.com/yourmomsbasement/JellyFlix-Web/releases), serves it in place of Jellyfin's
+  own and keeps it up to date.
+
+<p align="center">
+<img alt="Who's watching?" src="docs/screenshots/profiles.jpg" width="49%"/>
+<img alt="TV home" src="docs/screenshots/tv-home.jpg" width="49%"/>
+</p>
 
 Requires **Jellyfin 13** (the `unstable` builds), the same version as the JellyFlix web client.
 
 ## Install
 
-1. In Jellyfin, open **Dashboard → Plugins → Repositories** (Catalog → ⚙ on some versions), add a repository:
+1. In Jellyfin, open **Dashboard → Plugins → Repositories** (Catalog → ⚙ on some versions) and add a repository:
    - Name: `JellyFlix`
    - URL: `https://raw.githubusercontent.com/yourmomsbasement/JellyFlix-Plugin/main/manifest.json`
 2. Install **JellyFlix** from the catalog and restart Jellyfin.
-3. Open **Dashboard → Plugins → JellyFlix** and press **Check for updates now** to download the web client.
-4. Point Jellyfin's web folder at the folder shown on that page, once, and restart Jellyfin:
-   - **Linux package**: in `/etc/default/jellyfin` set `JELLYFIN_WEB_OPT="--webdir=/var/lib/jellyfin/jellyflix-web"`
-   - **Docker**: add the environment variable `JELLYFIN_WEB_DIR=/config/jellyflix-web`
-   - **Windows**: add `--webdir "C:\ProgramData\Jellyfin\Server\jellyflix-web"` to the server's startup arguments
 
-   From then on, new JellyFlix web releases are installed automatically (at startup and every six hours), and
-   Jellyfin package upgrades no longer replace the JellyFlix web client.
+That's it. On startup the plugin downloads the newest JellyFlix web client built for your Jellyfin version and serves it
+at `/web` in place of the stock one, on Linux, Docker and Windows alike: no `--webdir`, environment variable or file
+copying. New releases are installed automatically at startup and every six hours, and Jellyfin package upgrades no
+longer replace the JellyFlix web client.
 
-Upgrading from the separate *JellyFlix Profiles* / *JellyFlix Recommendations* plugins: remove both from
-**Dashboard → Plugins** (or delete their folders from the plugins folder) before installing this one. Households and
-profiles are kept; the profile settings return to their defaults.
+Settings live in the dashboard's **JellyFlix** section (or **Dashboard → Plugins → JellyFlix**):
+
+<p align="center">
+<img alt="Dashboard" src="docs/screenshots/dashboard.jpg" width="49%"/>
+<img alt="JellyFlix settings" src="docs/screenshots/dashboard-jellyflix.jpg" width="49%"/>
+</p>
+
+**Upgrading from the separate *JellyFlix Profiles* / *JellyFlix Recommendations* plugins:** just install this one.
+On its first start it removes the old plugins, carries their settings over and asks for one more restart (the dashboard
+shows *Restart required*). Households and profiles are kept.
+
+**Getting Jellyfin's own web client back:** untick **Serve the JellyFlix web client** in the JellyFlix settings. If
+the web client itself is broken and you can't reach the dashboard, set `<ServeWebClient>false</ServeWebClient>` in
+`plugins/configurations/JellyFlix.xml` in Jellyfin's data folder (or delete the `jellyflix-web` folder there) and
+restart Jellyfin.
 
 ## How the web updater stays safe
 
@@ -37,6 +55,10 @@ profiles are kept; the profile settings return to their defaults.
 - Every download is checked against the SHA-256 published with the release.
 - The new client is unpacked next to the old one and swapped in with a folder rename, so a failed update never leaves a
   half-written client. The installed build is recorded in `jellyflix-release.json`.
+- It lives in `jellyflix-web` in Jellyfin's data folder (`/var/lib/jellyfin`, `/config` in Docker,
+  `C:\ProgramData\Jellyfin\Server` on Windows). The plugin serves it through a small ASP.NET startup filter that runs
+  ahead of Jellyfin's own web hosting; anything the build doesn't contain, and everything outside `/web`, is left to
+  Jellyfin.
 
 ## How recommendations work
 
