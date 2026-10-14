@@ -8,7 +8,7 @@ using MediaBrowser.Model.Tasks;
 namespace JellyFlix.WebUpdater;
 
 /// <summary>
-/// The "Update JellyFlix web client" scheduled task: at startup and every six hours.
+/// The "Update Lanternfish web client" scheduled task: at startup and every six hours.
 /// </summary>
 public class WebUpdateTask : IScheduledTask
 {
@@ -33,10 +33,10 @@ public class WebUpdateTask : IScheduledTask
     public string Key => "JellyFlixWebUpdate";
 
     /// <inheritdoc />
-    public string Description => "Downloads and installs the newest JellyFlix web client built for this Jellyfin version.";
+    public string Description => "Downloads and installs the newest Lanternfish web client built for this Jellyfin version.";
 
     /// <inheritdoc />
-    public string Category => "JellyFlix";
+    public string Category => "Lanternfish";
 
     /// <inheritdoc />
     public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)

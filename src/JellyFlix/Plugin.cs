@@ -39,13 +39,13 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public static Plugin? Instance { get; private set; }
 
     /// <inheritdoc />
-    public override string Name => "JellyFlix";
+    public override string Name => "Lanternfish";
 
     /// <inheritdoc />
     public override Guid Id => PluginId;
 
     /// <inheritdoc />
-    public override string Description => "Netflix-style household profiles, personalized recommendations and automatic JellyFlix web client updates.";
+    public override string Description => "Household profiles, personalized recommendations, requests and automatic Lanternfish web client updates.";
 
     /// <summary>
     /// Carries the profile settings over from the separate JellyFlix Profiles plugin this one replaces. Its settings

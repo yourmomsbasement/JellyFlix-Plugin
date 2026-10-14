@@ -201,8 +201,8 @@ public sealed class WebUpdateService : IDisposable
         if (target is null)
         {
             return newest is null
-                ? "No JellyFlix web releases found."
-                : $"No JellyFlix web release is built for Jellyfin {serverVersion} yet (newest is for {newest.ServerVersion}).";
+                ? "No Lanternfish web releases found."
+                : $"No Lanternfish web release is built for Jellyfin {serverVersion} yet (newest is for {newest.ServerVersion}).";
         }
 
         var installed = ReadInstalled(InstallPath);

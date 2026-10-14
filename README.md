@@ -1,8 +1,8 @@
-<p align="center"><img alt="JellyFlix" src="images/banner.png"/></p>
+<p align="center"><img alt="Lanternfish" src="images/banner.png"/></p>
 
-# JellyFlix plugin
+# Lanternfish plugin
 
-The server side of [JellyFlix](https://github.com/yourmomsbasement/JellyFlix-Web), a Netflix-style Jellyfin. One plugin
+The server side of [Lanternfish](https://github.com/yourmomsbasement/JellyFlix-Web), a Netflix-style Jellyfin. One plugin
 that does all of this:
 
 - **Profiles**: one household login, several Netflix-style profiles ("Who's watching?"). Each profile is a hidden
@@ -21,7 +21,7 @@ that does all of this:
   like it. See [end-credit companion](#end-credit-companion).
 - **Seasonal themes and dynamic colors**: Halloween, Christmas and summer looks for the home page with curated
   shelves, and accent colors taken from each title's artwork. See [appearance](#appearance).
-- **Web client**: downloads the JellyFlix web client from
+- **Web client**: downloads the Lanternfish web client from
   [JellyFlix-Web releases](https://github.com/yourmomsbasement/JellyFlix-Web/releases), serves it in place of Jellyfin's
   own and keeps it up to date.
 
@@ -30,36 +30,39 @@ that does all of this:
 <img alt="TV home" src="docs/screenshots/tv-home.jpg" width="49%"/>
 </p>
 
-Requires **Jellyfin 13** (the `unstable` builds), the same version as the JellyFlix web client.
+Lanternfish was called JellyFlix until October 2026. Installed copies update to the new name in place: the plugin's id,
+settings (`JellyFlix.xml`), API (`/JellyFlix/...`) and the repository addresses are unchanged.
+
+Requires **Jellyfin 13** (the `unstable` builds), the same version as the Lanternfish web client.
 
 ## Install
 
 1. In Jellyfin, open **Dashboard → Plugins → Repositories** (Catalog → ⚙ on some versions) and add a repository:
-   - Name: `JellyFlix`
+   - Name: `Lanternfish`
    - URL: `https://raw.githubusercontent.com/yourmomsbasement/JellyFlix-Plugin/main/manifest.json`
-2. Install **JellyFlix** from the catalog and restart Jellyfin.
+2. Install **Lanternfish** from the catalog and restart Jellyfin.
 
-That's it. On startup the plugin downloads the newest JellyFlix web client built for your Jellyfin version and serves it
+That's it. On startup the plugin downloads the newest Lanternfish web client built for your Jellyfin version and serves it
 at `/web` in place of the stock one, on Linux, Docker and Windows alike: no `--webdir`, environment variable or file
 copying. New releases are installed automatically at startup and every six hours, and Jellyfin package upgrades no
-longer replace the JellyFlix web client.
+longer replace the Lanternfish web client.
 
-Settings live under **JellyFlix → Settings** in the dashboard's side menu (or **Dashboard → Plugins → JellyFlix**), and
-the dashboard home gets a JellyFlix card. See [settings](#settings).
+Settings live under **Lanternfish → Settings** in the dashboard's side menu (or **Dashboard → Plugins → Lanternfish**), and
+the dashboard home gets a Lanternfish card. See [settings](#settings).
 
 <p align="center">
 <img alt="Dashboard" src="docs/screenshots/dashboard.jpg" width="49%"/>
-<img alt="JellyFlix settings" src="docs/screenshots/dashboard-jellyflix.jpg" width="49%"/>
+<img alt="Lanternfish settings" src="docs/screenshots/dashboard-jellyflix.jpg" width="49%"/>
 </p>
 
-**Updating:** new plugin versions show up in **Dashboard → Plugins**; update JellyFlix there and restart Jellyfin.
+**Updating:** new plugin versions show up in **Dashboard → Plugins**; update Lanternfish there and restart Jellyfin.
 The settings page tells you when a setting needs a newer plugin than the one installed.
 
 **Upgrading from the separate *JellyFlix Profiles* / *JellyFlix Recommendations* plugins:** just install this one.
 On its first start it removes the old plugins, carries their settings over and asks for one more restart (the dashboard
 shows *Restart required*). Households and profiles are kept.
 
-**Getting Jellyfin's own web client back:** untick **Serve the JellyFlix web client** in the JellyFlix settings. If
+**Getting Jellyfin's own web client back:** untick **Serve the Lanternfish web client** in the Lanternfish settings. If
 the web client itself is broken and you can't reach the dashboard, set `<ServeWebClient>false</ServeWebClient>` in
 `plugins/configurations/JellyFlix.xml` in Jellyfin's data folder (or delete the `jellyflix-web` folder there) and
 restart Jellyfin.
@@ -80,8 +83,8 @@ restart Jellyfin.
 | Embeddings API address / model / API key | — / `nomic-embed-text` / — | An OpenAI-compatible embeddings API, e.g. Ollama. |
 | Seasonal home page | Automatic | Automatic, Off, Halloween, Christmas or Summer. |
 | Dynamic interface colors | On | Accent colors from the selected title's artwork. |
-| Serve the JellyFlix web client | On | Serve JellyFlix at `/web`; off gives Jellyfin's own web client back. |
-| Install new JellyFlix web releases automatically | On | At startup and every six hours. |
+| Serve the Lanternfish web client | On | Serve Lanternfish at `/web`; off gives Jellyfin's own web client back. |
+| Install new Lanternfish web releases automatically | On | At startup and every six hours. |
 | Release repository | `yourmomsbasement/JellyFlix-Web` | Where web client releases come from. |
 
 Saving reads the settings back from the server and names any it didn't keep (for example, a setting an older plugin
@@ -91,7 +94,7 @@ a progress bar while they run, then whether it worked and, if not, why.
 
 ## Requests
 
-In the JellyFlix settings, turn on **Requests**, pick the request service (**Seerr** for Jellyseerr / Overseerr, or
+In the Lanternfish settings, turn on **Requests**, pick the request service (**Seerr** for Jellyseerr / Overseerr, or
 **Ombi**), enter its address (e.g. `http://192.168.1.10:5055` for Seerr, `http://192.168.1.10:3579` for Ombi) and API
 key, then press **Save and test connection**. A panel underneath confirms the connection and the service's version, or
 shows the service's own error (such as an invalid API key) and what to check.
@@ -176,7 +179,7 @@ description** row under the usual results, leaving out titles the name search al
   in meaning are merged with the word matches, so "marooned on another planet" finds the same film. For Ollama, run
   `ollama pull nomic-embed-text` and enter `http://<ollama-host>:11434`.
 - **Save and test connection** embeds a sample and shows the model and its vector size, or the API's error.
-  **Build search index now** embeds the titles in the background with a progress bar; the **Build JellyFlix search
+  **Build search index now** embeds the titles in the background with a progress bar; the **Build Lanternfish search
   index** scheduled task does the same at startup and daily. Only new titles, and titles whose metadata changed, are
   embedded again; changing the model starts over. Vectors are kept in `jellyflix-search` in Jellyfin's data folder.
 - Results only include titles the profile may see, so parental controls and library access apply. If the embeddings
@@ -197,7 +200,7 @@ artwork. **Use library artwork** goes back.
 
 ## End-credit companion
 
-When a movie finishes (it played to the credits, and nothing is queued after it), JellyFlix opens a companion page once
+When a movie finishes (it played to the credits, and nothing is queued after it), Lanternfish opens a companion page once
 the player closes:
 
 - **Next in *collection***: the following film in the movie's collection (a Jellyfin box set, ordered by release),
@@ -217,7 +220,7 @@ It works in TV mode too, with Play focused first. Back returns to where playback
 
 - Releases are read newest first, and the check stops at the first one built for the running Jellyfin version
   (major.minor), so a check normally downloads one small `release.json` and, if it's new, the ~36 MB client.
-- The **Update JellyFlix web client** scheduled task (Dashboard → Scheduled Tasks → JellyFlix) shows its progress
+- The **Update Lanternfish web client** scheduled task (Dashboard → Scheduled Tasks → Lanternfish) shows its progress
   while the client downloads. A download that stalls gives up after 15 minutes, so it never blocks later checks.
 - Only releases built for the running Jellyfin version are installed, and every download is checked against the SHA-256
   published with the release.
@@ -271,6 +274,7 @@ All endpoints use the signed-in user's session.
 
 | Version | Changes |
 | --- | --- |
+| 1.4.1 | Renamed to Lanternfish, with the new catalog image. |
 | 1.4.0 | Ombi as a request service alongside Seerr. |
 | 1.3.0 | Seasonal home pages (Halloween, Christmas, summer) with curated shelves, and the dynamic colors setting. |
 | 1.2.1 | Profile avatars: generated icons (`AvatarIcon`) and photo uploads the household owner can make for any profile. |
@@ -282,7 +286,7 @@ All endpoints use the signed-in user's session.
 
 ## Development
 
-The plugin builds against the JellyFlix server fork, included as the `jellyfin-server` submodule, so it always matches
+The plugin builds against the Lanternfish server fork, included as the `jellyfin-server` submodule, so it always matches
 the Jellyfin version it targets.
 
 ```sh

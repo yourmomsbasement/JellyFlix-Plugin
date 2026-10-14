@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JellyFlix</title>
+    <title>Lanternfish</title>
 </head>
 <body>
     <div id="JellyFlixConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
@@ -102,16 +102,16 @@
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label>
                             <input is="emby-checkbox" type="checkbox" id="WebUpdatesEnabled" />
-                            <span>Automatically install new JellyFlix web client releases</span>
+                            <span>Automatically install new Lanternfish web client releases</span>
                         </label>
                         <div class="fieldDescription checkboxFieldDescription">Checked at startup and every six hours. Only releases built for this Jellyfin version are installed.</div>
                     </div>
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label>
                             <input is="emby-checkbox" type="checkbox" id="ServeWebClient" />
-                            <span>Serve the JellyFlix web client</span>
+                            <span>Serve the Lanternfish web client</span>
                         </label>
-                        <div class="fieldDescription checkboxFieldDescription">Replaces Jellyfin's own web client with the installed JellyFlix one. Turn off to get Jellyfin's stock web client back.</div>
+                        <div class="fieldDescription checkboxFieldDescription">Replaces Jellyfin's own web client with the installed Lanternfish one. Turn off to get Jellyfin's stock web client back.</div>
                     </div>
                     <div class="inputContainer">
                         <input is="emby-input" id="WebReleasesRepository" type="text" label="Release repository (owner/name)" />
@@ -155,13 +155,13 @@
                     var help = page.querySelector('#webDirHelp');
                     var message;
                     if (status.IsServerUsingInstall) {
-                        message = '<b>Users get the JellyFlix web client.</b> ' + (status.IsServedByPlugin
+                        message = '<b>Users get the Lanternfish web client.</b> ' + (status.IsServedByPlugin
                             ? 'It is served by this plugin, so nothing needs configuring on the server.'
                             : 'Jellyfin\'s web folder points at the install folder.');
                     } else if (!status.Installed) {
-                        message = '<b>The JellyFlix web client isn\'t installed yet.</b> It is downloaded automatically at startup; press <b>Check for updates now</b> to get it straight away. Until then Jellyfin\'s own web client is shown.';
+                        message = '<b>The Lanternfish web client isn\'t installed yet.</b> It is downloaded automatically at startup; press <b>Check for updates now</b> to get it straight away. Until then Jellyfin\'s own web client is shown.';
                     } else {
-                        message = '<b>Jellyfin\'s own web client is shown</b> because serving the JellyFlix web client is turned off.';
+                        message = '<b>Jellyfin\'s own web client is shown</b> because serving the Lanternfish web client is turned off.';
                     }
                     help.style.display = 'block';
                     help.innerHTML = message;

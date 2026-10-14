@@ -1,9 +1,9 @@
 [
   {
     "guid": "c1a2981e-3ba2-44c5-9360-83cf293c2a13",
-    "name": "JellyFlix",
-    "description": "Netflix-style household profiles, recommendations and automatic JellyFlix web client updates.",
-    "overview": "One login, several profiles with their own watch history; personalized Top Picks and Because you watched rows; keeps the JellyFlix web client up to date.",
+    "name": "Lanternfish",
+    "description": "Lanternfish: household profiles, recommendations, requests and the Lanternfish web client for Jellyfin.",
+    "overview": "One login, several profiles with their own watch history; personalized Top Picks and Because you watched rows; requests through Seerr or Ombi; keeps the Lanternfish web client up to date.",
     "owner": "yourmomsbasement",
     "category": "General",
     "versions": [
@@ -72,6 +72,6 @@
         "timestamp": "2026-10-13T20:29:28Z"
       }
     ],
-    "imageUrl": "https://raw.githubusercontent.com/yourmomsbasement/JellyFlix-Plugin/main/images/jellyflix.png"
+    "imageUrl": "https://raw.githubusercontent.com/yourmomsbasement/JellyFlix-Plugin/main/images/lanternfish.png"
   }
 ]
