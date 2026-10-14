@@ -1,5 +1,7 @@
 using System;
 using Jellyfin.Data.Events.Users;
+using JellyFlix.Artwork;
+using JellyFlix.Companion;
 using JellyFlix.Configuration;
 using JellyFlix.Migration;
 using JellyFlix.Profiles;
@@ -8,6 +10,7 @@ using JellyFlix.Profiles.Events;
 using JellyFlix.Profiles.Security;
 using JellyFlix.Recommendations;
 using JellyFlix.Requests;
+using JellyFlix.Search;
 using JellyFlix.WebUpdater;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
@@ -47,6 +50,18 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<SeerrClient>();
         serviceCollection.AddSingleton<IRequesterResolver, HouseholdRequesterResolver>();
         serviceCollection.AddSingleton<RequestService>();
+
+        // Search by description
+        serviceCollection.AddSingleton<EmbeddingClient>();
+        serviceCollection.AddSingleton<EmbeddingStore>();
+        serviceCollection.AddSingleton<DescriptionSearchService>();
+
+        // Artwork per profile
+        serviceCollection.AddSingleton<ArtworkStore>();
+        serviceCollection.AddSingleton<ArtworkService>();
+
+        // End-credit companion
+        serviceCollection.AddSingleton<CompanionService>();
 
         // Web Updater
         serviceCollection.AddSingleton<IReleaseSource, GitHubReleaseSource>();

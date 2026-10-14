@@ -3,7 +3,7 @@
 # JellyFlix plugin
 
 The server side of [JellyFlix](https://github.com/yourmomsbasement/JellyFlix-Web), a Netflix-style Jellyfin. One plugin
-that does four things:
+that does all of this:
 
 - **Profiles**: one household login, several Netflix-style profiles ("Who's watching?"). Each profile is a hidden
   Jellyfin user, so watch history, Continue Watching, Next Up and parental controls are tracked per profile. Optional
@@ -12,6 +12,12 @@ that does four things:
   profile's history. See [how it works](#how-recommendations-work).
 - **Requests**: search shows movies and shows that aren't in the library, with a **Request** button that goes
   through [Seerr](https://github.com/seerr-team/seerr) (Jellyseerr / Overseerr). See [requests](#requests).
+- **Search by description**: "space movie with a stranded astronaut" finds titles by their plot, tagline, genres,
+  keywords and cast, and by meaning too with an embeddings API. See [search by description](#search-by-description).
+- **Artwork per profile**: each profile can pick its own poster and background for a title without changing them for
+  anyone else. See [artwork per profile](#artwork-per-profile).
+- **End-credit companion**: when a movie ends, the next film in its collection, its extras, its soundtrack and more
+  like it. See [end-credit companion](#end-credit-companion).
 - **Web client**: downloads the JellyFlix web client from
   [JellyFlix-Web releases](https://github.com/yourmomsbasement/JellyFlix-Web/releases), serves it in place of Jellyfin's
   own and keeps it up to date.
@@ -65,12 +71,15 @@ restart Jellyfin.
 | Let profiles request titles that aren't in the library | Off | Shows request cards in search (needs Seerr below). |
 | Seerr address / API key | — | Where Seerr runs and its API key (Seerr → Settings → General). |
 | Let kids profiles request titles | Off | Kids profiles don't see request cards otherwise. |
+| Match descriptions by meaning (semantic search) | Off | Also match descriptions by meaning, using the embeddings API below. |
+| Embeddings API address / model / API key | — / `nomic-embed-text` / — | An OpenAI-compatible embeddings API, e.g. Ollama. |
 | Serve the JellyFlix web client | On | Serve JellyFlix at `/web`; off gives Jellyfin's own web client back. |
 | Install new JellyFlix web releases automatically | On | At startup and every six hours. |
 | Release repository | `yourmomsbasement/JellyFlix-Web` | Where web client releases come from. |
 
 Saving reads the settings back from the server and names any it didn't keep (for example, a setting an older plugin
-doesn't have). **Save and test connection** and **Check for updates now** each show their result in a panel underneath:
+doesn't have). **Save and test connection** (for Seerr and for the embeddings API), **Build search index now** and **Check for
+updates now** each show their result in a panel underneath:
 a progress bar while they run, then whether it worked and, if not, why.
 
 ## Requests
@@ -91,6 +100,63 @@ connection and Seerr's version, or shows Seerr's error (such as an invalid API k
   match, the request is made as the API key's user. Seerr's own permissions and approval rules apply.
 - Kids profiles don't see the row unless **Let kids profiles request titles** is on.
 - The API key stays on the server: browsers only talk to the plugin.
+
+## Search by description
+
+Search also looks for titles whose metadata matches what was typed, so "space movie with a stranded astronaut" finds a
+film about an astronaut left on Mars even though its name says nothing of the sort. Matches appear in a **Matches your
+description** row under the usual results, leaving out titles the name search already shows.
+
+<p align="center">
+<img alt="Matches your description" src="docs/screenshots/search-description.jpg" width="49%"/>
+<img alt="Semantic search settings" src="docs/screenshots/dashboard-search.jpg" width="49%"/>
+</p>
+
+- **Words, always on.** A full-text (BM25) index of every movie and show: name, original title, tagline, plot, genres,
+  tags, studios and the main cast and crew, with the name counting most. Plurals and word endings are folded
+  ("stranded" matches "strand"), filler words ("movie", "with", "a") are ignored and weak matches are dropped. It's
+  built in memory on first search and rebuilt when the library changes.
+- **Meaning, optional.** With **Match descriptions by meaning** on and an OpenAI-compatible embeddings API set up
+  (Ollama, LM Studio or OpenAI), each title's description is turned into a vector, and so is the search. Titles close
+  in meaning are merged with the word matches, so "marooned on another planet" finds the same film. For Ollama, run
+  `ollama pull nomic-embed-text` and enter `http://<ollama-host>:11434`.
+- **Save and test connection** embeds a sample and shows the model and its vector size, or the API's error.
+  **Build search index now** embeds the titles in the background with a progress bar; the **Build JellyFlix search
+  index** scheduled task does the same at startup and daily. Only new titles, and titles whose metadata changed, are
+  embedded again; changing the model starts over. Vectors are kept in `jellyflix-search` in Jellyfin's data folder.
+- Results only include titles the profile may see, so parental controls and library access apply. If the embeddings
+  API is down, search quietly falls back to words.
+
+## Artwork per profile
+
+On a title page, **⋯ → Change artwork** lists the posters and backgrounds available for the title: the library's own
+first, then the ones Jellyfin's image providers offer (TheMovieDb, and others such as Fanart.tv if installed). Picking
+one changes it for the current profile only, on home, title pages and TV mode; everyone else keeps the library's
+artwork. **Use library artwork** goes back.
+
+<p align="center"><img alt="Change artwork" src="docs/screenshots/artwork-dialog.jpg" width="70%"/></p>
+
+- Images from providers are downloaded once into `jellyflix-artwork` in Jellyfin's data folder, so they keep working
+  offline, and removed when no profile uses them any more. Only images a provider offers for that title can be chosen.
+- Choices are kept per profile and forgotten when the profile is deleted. The library's metadata isn't touched.
+
+## End-credit companion
+
+When a movie finishes (it played to the credits, and nothing is queued after it), JellyFlix opens a companion page once
+the player closes:
+
+- **Next in *collection***: the following film in the movie's collection (a Jellyfin box set, ordered by release),
+  with **Play** and **More info**.
+- **Extras**: behind the scenes, featurettes, deleted scenes, interviews and other extras in the movie's folder.
+- **Soundtrack**: who wrote the music, and soundtrack albums from the music library.
+- **More Like This** from the recommendations.
+
+<p align="center">
+<img alt="End-credit companion" src="docs/screenshots/companion.jpg" width="49%"/>
+<img alt="End-credit companion on TV" src="docs/screenshots/tv-companion.jpg" width="49%"/>
+</p>
+
+It works in TV mode too, with Play focused first. Back returns to where playback started.
 
 ## How the web updater works
 
@@ -131,6 +197,15 @@ All endpoints use the signed-in user's session.
 | `GET` | `/JellyFlix/Requests/Search?query=` | Titles matching a search that aren't in the library, from Seerr. |
 | `POST` | `/JellyFlix/Requests` | Request a title (`{ TmdbId, MediaType: "movie" \| "tv" }`). |
 | `POST` | `/JellyFlix/Requests/Test` | Check the Seerr connection (administrators). |
+| `GET` | `/JellyFlix/Search?query=&limit=` | Titles matching a description, best first. |
+| `GET` | `/JellyFlix/Search/Status` | Search index status (administrators). |
+| `POST` | `/JellyFlix/Search/Test` | Check the embeddings API (administrators). |
+| `POST` | `/JellyFlix/Search/Build` | Start embedding new and changed titles (administrators). |
+| `GET` | `/JellyFlix/Artwork` | The profile's chosen posters and backgrounds, by title. |
+| `GET` | `/JellyFlix/Artwork/{id}/Options?kind=Poster\|Backdrop` | Artwork the profile can choose from. |
+| `POST` | `/JellyFlix/Artwork/{id}` | Choose artwork for the profile (`{ Kind, OptionId }`). |
+| `DELETE` | `/JellyFlix/Artwork/{id}?kind=` | Go back to the library's artwork. |
+| `GET` | `/JellyFlix/Companion/{id}` | Next in the collection, extras and soundtrack for a title. |
 | `GET` | `/JellyFlix/WebUpdate` | Web Updater status (administrators). |
 | `POST` | `/JellyFlix/WebUpdate/Check` | Check for and install a web client now (administrators). |
 
@@ -138,6 +213,7 @@ All endpoints use the signed-in user's session.
 
 | Version | Changes |
 | --- | --- |
+| 1.2.0 | Search by description (with optional semantic search), artwork per profile, the end-credit companion. |
 | 1.1.1 | Faster web client checks (stop at the first compatible release), download progress, a 15-minute download limit. |
 | 1.1.0 | Requests through Seerr from search. |
 | 1.0.1 | Serves the web client itself (no `--webdir`), removes the old separate plugins and carries their settings over. |

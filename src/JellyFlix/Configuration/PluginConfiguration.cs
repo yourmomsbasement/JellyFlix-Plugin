@@ -63,4 +63,24 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets a value indicating whether kids profiles may request titles.
     /// </summary>
     public bool AllowKidsRequests { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether description search also matches by meaning, using embeddings.
+    /// </summary>
+    public bool SemanticSearchEnabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets the address of an OpenAI-compatible embeddings API, e.g. <c>http://192.168.1.10:11434</c> for Ollama.
+    /// </summary>
+    public string EmbeddingsUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the embeddings model.
+    /// </summary>
+    public string EmbeddingsModel { get; set; } = "nomic-embed-text";
+
+    /// <summary>
+    /// Gets or sets the embeddings API key, if the API needs one. It never leaves the server.
+    /// </summary>
+    public string EmbeddingsApiKey { get; set; } = string.Empty;
 }
