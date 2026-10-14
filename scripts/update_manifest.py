@@ -9,7 +9,7 @@ import json
 import sys
 
 GUID = "c1a2981e-3ba2-44c5-9360-83cf293c2a13"
-IMAGE_URL = "https://raw.githubusercontent.com/yourmomsbasement/JellyFlix-Plugin/main/images/jellyflix.png"
+IMAGE_URL = "https://raw.githubusercontent.com/yourmomsbasement/JellyFlix-Plugin/main/images/lanternfish.png"
 
 
 def main(manifest_path, zip_path, version, source_url, target_abi, changelog=""):
