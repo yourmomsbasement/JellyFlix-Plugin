@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.2.0.0",
+        "changelog": "See https://github.com/yourmomsbasement/JellyFlix-Plugin/releases/tag/v1.2.0",
+        "targetAbi": "13.0.0.0",
+        "sourceUrl": "https://github.com/yourmomsbasement/JellyFlix-Plugin/releases/download/v1.2.0/jellyflix_1.2.0.0.zip",
+        "checksum": "5ad0b26f5316e75fd4ecd8720f17729a",
+        "timestamp": "2026-10-14T18:50:42Z"
+      },
+      {
         "version": "1.1.1.0",
         "changelog": "See https://github.com/yourmomsbasement/JellyFlix-Plugin/releases/tag/v1.1.1",
         "targetAbi": "13.0.0.0",
