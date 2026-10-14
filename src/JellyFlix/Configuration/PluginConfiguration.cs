@@ -28,6 +28,12 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool WebUpdatesEnabled { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the plugin serves the installed JellyFlix web client at <c>/web</c>, in
+    /// place of the one that ships with Jellyfin. Turn off to get Jellyfin's stock web client back.
+    /// </summary>
+    public bool ServeWebClient { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets the GitHub repository ("owner/name") whose releases provide the JellyFlix web client.
     /// </summary>
     public string WebReleasesRepository { get; set; } = "yourmomsbasement/JellyFlix-Web";

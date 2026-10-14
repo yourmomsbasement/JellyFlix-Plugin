@@ -48,8 +48,22 @@ public sealed class WebUpdateServiceTests : IDisposable
         Assert.Equal("2026.10.13.2", status.Installed?.Version);
         Assert.Equal("new", await File.ReadAllTextAsync(Path.Combine(_service.InstallPath, "index.html"), TestContext.Current.CancellationToken));
         Assert.True(File.Exists(Path.Combine(_service.InstallPath, "app.js")));
-        Assert.False(status.IsServerUsingInstall);
+        Assert.True(status.IsServedByPlugin);
+        Assert.True(status.IsServerUsingInstall);
         Assert.StartsWith("Installed", status.LastResult, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ReportsTheStockClientWhenServingIsOff()
+    {
+        _config.ServeWebClient = false;
+        _source.Add("2026.10.13.1", "13.0", Zip(("index.html", "v1")));
+
+        var status = await _service.CheckAndInstallAsync(CancellationToken.None);
+
+        Assert.NotNull(status.Installed);
+        Assert.False(status.IsServedByPlugin);
+        Assert.False(status.IsServerUsingInstall);
     }
 
     [Fact]

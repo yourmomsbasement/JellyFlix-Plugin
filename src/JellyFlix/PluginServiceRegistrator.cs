@@ -1,6 +1,7 @@
 using System;
 using Jellyfin.Data.Events.Users;
 using JellyFlix.Configuration;
+using JellyFlix.Migration;
 using JellyFlix.Profiles;
 using JellyFlix.Profiles.Data;
 using JellyFlix.Profiles.Events;
@@ -8,11 +9,15 @@ using JellyFlix.Profiles.Security;
 using JellyFlix.Recommendations;
 using JellyFlix.WebUpdater;
 using MediaBrowser.Common.Configuration;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
+using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Events;
 using MediaBrowser.Controller.Plugins;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace JellyFlix;
@@ -46,5 +51,15 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
             sp.GetRequiredService<Func<PluginConfiguration>>(),
             sp.GetRequiredService<TimeProvider>(),
             sp.GetRequiredService<ILogger<WebUpdateService>>()));
+
+        // Serves the installed web client at /web, so the server needs no --webdir
+        serviceCollection.AddSingleton(sp => new WebClientHost(
+            sp.GetRequiredService<IApplicationPaths>(),
+            sp.GetRequiredService<Func<PluginConfiguration>>(),
+            () => sp.GetRequiredService<IServerConfigurationManager>().GetNetworkConfiguration().BaseUrl));
+        serviceCollection.AddSingleton<IStartupFilter>(sp => sp.GetRequiredService<WebClientHost>());
+
+        // Replaces the separate JellyFlix Profiles and Recommendations plugins
+        serviceCollection.AddSingleton<IHostedService, LegacyPluginCleanup>();
     }
 }

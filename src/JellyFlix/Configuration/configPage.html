@@ -36,6 +36,13 @@
                         </label>
                         <div class="fieldDescription checkboxFieldDescription">Checked at startup and every six hours. Only releases built for this Jellyfin version are installed.</div>
                     </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="ServeWebClient" />
+                            <span>Serve the JellyFlix web client</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">Replaces Jellyfin's own web client with the installed JellyFlix one. Turn off to get Jellyfin's stock web client back.</div>
+                    </div>
                     <div class="inputContainer">
                         <input is="emby-input" id="WebReleasesRepository" type="text" label="Release repository (owner/name)" />
                     </div>
@@ -76,20 +83,18 @@
                         '<div><b>Install folder:</b> <code>' + escapeHtml(status.InstallPath) + '</code></div>';
 
                     var help = page.querySelector('#webDirHelp');
+                    var message;
                     if (status.IsServerUsingInstall) {
-                        help.style.display = 'none';
+                        message = '<b>Users get the JellyFlix web client.</b> ' + (status.IsServedByPlugin
+                            ? 'It is served by this plugin, so nothing needs configuring on the server.'
+                            : 'Jellyfin\'s web folder points at the install folder.');
+                    } else if (!status.Installed) {
+                        message = '<b>The JellyFlix web client isn\'t installed yet.</b> It is downloaded automatically at startup; press <b>Check for updates now</b> to get it straight away. Until then Jellyfin\'s own web client is shown.';
                     } else {
-                        help.style.display = 'block';
-                        help.innerHTML =
-                            '<b>Jellyfin is not serving the auto-updated web client yet.</b> It currently serves <code>' + escapeHtml(status.ServerWebPath) + '</code>. ' +
-                            'Point Jellyfin\'s web folder at <code>' + escapeHtml(status.InstallPath) + '</code> once, then restart Jellyfin:' +
-                            '<ul>' +
-                            '<li>Linux package: in <code>/etc/default/jellyfin</code> set <code>JELLYFIN_WEB_OPT="--webdir=' + escapeHtml(status.InstallPath) + '"</code></li>' +
-                            '<li>Docker: add the environment variable <code>JELLYFIN_WEB_DIR=' + escapeHtml(status.InstallPath) + '</code></li>' +
-                            '<li>Windows: add <code>--webdir "' + escapeHtml(status.InstallPath) + '"</code> to the server\'s startup arguments</li>' +
-                            '</ul>' +
-                            (status.Installed ? '' : 'Run <b>Check for updates now</b> first so the folder contains a web client.');
+                        message = '<b>Jellyfin\'s own web client is shown</b> because serving the JellyFlix web client is turned off.';
                     }
+                    help.style.display = 'block';
+                    help.innerHTML = message;
                 }
 
                 function loadStatus() {
@@ -103,6 +108,7 @@
                         page.querySelector('#KidsMaxParentalRating').value = config.KidsMaxParentalRating;
                         page.querySelector('#AllowNonAdminOwners').checked = config.AllowNonAdminOwners;
                         page.querySelector('#WebUpdatesEnabled').checked = config.WebUpdatesEnabled;
+                        page.querySelector('#ServeWebClient').checked = config.ServeWebClient;
                         page.querySelector('#WebReleasesRepository').value = config.WebReleasesRepository;
                         return loadStatus();
                     }).finally(function () {
@@ -127,8 +133,11 @@
                         config.KidsMaxParentalRating = parseInt(page.querySelector('#KidsMaxParentalRating').value, 10);
                         config.AllowNonAdminOwners = page.querySelector('#AllowNonAdminOwners').checked;
                         config.WebUpdatesEnabled = page.querySelector('#WebUpdatesEnabled').checked;
+                        config.ServeWebClient = page.querySelector('#ServeWebClient').checked;
                         config.WebReleasesRepository = page.querySelector('#WebReleasesRepository').value.trim();
-                        ApiClient.updatePluginConfiguration(pluginId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                        ApiClient.updatePluginConfiguration(pluginId, config)
+                            .then(Dashboard.processPluginConfigurationUpdateResult)
+                            .then(loadStatus);
                     });
                     return false;
                 });

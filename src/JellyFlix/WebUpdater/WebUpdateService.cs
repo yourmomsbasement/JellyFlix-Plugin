@@ -72,23 +72,38 @@ public sealed class WebUpdateService : IDisposable
     /// <summary>
     /// Gets the folder the web client is installed into.
     /// </summary>
-    public string InstallPath => Path.Combine(_applicationPaths.ProgramDataPath, InstallFolderName);
+    public string InstallPath => GetInstallPath(_applicationPaths);
+
+    /// <summary>
+    /// Gets the folder the web client is installed into: <c>jellyflix-web</c> in Jellyfin's data folder.
+    /// </summary>
+    /// <param name="applicationPaths">The application paths.</param>
+    /// <returns>The install folder.</returns>
+    public static string GetInstallPath(IApplicationPaths applicationPaths)
+        => Path.Combine(applicationPaths.ProgramDataPath, InstallFolderName);
 
     /// <summary>
     /// Gets the current status.
     /// </summary>
     /// <returns>The status.</returns>
-    public WebUpdateStatus GetStatus() => new()
+    public WebUpdateStatus GetStatus()
     {
-        Enabled = _configuration().WebUpdatesEnabled,
-        InstallPath = InstallPath,
-        ServerWebPath = _applicationPaths.WebPath,
-        IsServerUsingInstall = SamePath(_applicationPaths.WebPath, InstallPath),
-        Installed = ReadInstalled(InstallPath),
-        LatestVersion = _latestVersion,
-        LastCheck = _lastCheck,
-        LastResult = _lastResult
-    };
+        var configuration = _configuration();
+        var installed = ReadInstalled(InstallPath);
+        var isWebDir = SamePath(_applicationPaths.WebPath, InstallPath);
+        return new()
+        {
+            Enabled = configuration.WebUpdatesEnabled,
+            InstallPath = InstallPath,
+            ServerWebPath = _applicationPaths.WebPath,
+            IsServedByPlugin = configuration.ServeWebClient && installed is not null && !isWebDir,
+            IsServerUsingInstall = isWebDir || (configuration.ServeWebClient && installed is not null),
+            Installed = installed,
+            LatestVersion = _latestVersion,
+            LastCheck = _lastCheck,
+            LastResult = _lastResult
+        };
+    }
 
     /// <summary>
     /// Checks for a newer compatible release and installs it.

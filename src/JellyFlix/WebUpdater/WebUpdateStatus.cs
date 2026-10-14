@@ -23,10 +23,15 @@ public class WebUpdateStatus
     public string ServerWebPath { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets a value indicating whether Jellyfin serves the web client the updater installs.
-    /// When false, updates are downloaded but users don't see them until Jellyfin's web folder is pointed at <see cref="InstallPath"/>.
+    /// Gets or sets a value indicating whether users get the web client the updater installs, either served by the
+    /// plugin or because Jellyfin's web folder points at <see cref="InstallPath"/>.
     /// </summary>
     public bool IsServerUsingInstall { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the plugin serves the installed web client in place of Jellyfin's own.
+    /// </summary>
+    public bool IsServedByPlugin { get; set; }
 
     /// <summary>
     /// Gets or sets the installed build, if any.

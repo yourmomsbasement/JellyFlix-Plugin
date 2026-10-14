@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using JellyFlix.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
@@ -29,6 +30,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
         : base(applicationPaths, xmlSerializer)
     {
         Instance = this;
+        MigrateLegacyConfiguration(applicationPaths);
     }
 
     /// <summary>
@@ -44,6 +46,28 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 
     /// <inheritdoc />
     public override string Description => "Netflix-style household profiles, personalized recommendations and automatic JellyFlix web client updates.";
+
+    /// <summary>
+    /// Carries the profile settings over from the separate JellyFlix Profiles plugin this one replaces. Its settings
+    /// file has the same layout, so it is simply copied.
+    /// </summary>
+    private void MigrateLegacyConfiguration(IApplicationPaths applicationPaths)
+    {
+        var legacyPath = Path.Combine(applicationPaths.PluginConfigurationsPath, "JellyFlix.Profiles.xml");
+        if (File.Exists(ConfigurationFilePath) || !File.Exists(legacyPath))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Copy(legacyPath, ConfigurationFilePath);
+        }
+        catch (IOException)
+        {
+            // Defaults it is
+        }
+    }
 
     /// <inheritdoc />
     public IEnumerable<PluginPageInfo> GetPages()
