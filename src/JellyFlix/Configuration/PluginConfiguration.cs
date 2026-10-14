@@ -42,4 +42,25 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets the GitHub API base URL. Only changed for testing or GitHub Enterprise.
     /// </summary>
     public string GitHubApiUrl { get; set; } = "https://api.github.com";
+
+    /// <summary>
+    /// Gets or sets a value indicating whether titles that aren't in the library can be requested through Seerr
+    /// (Jellyseerr / Overseerr) from search.
+    /// </summary>
+    public bool RequestsEnabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Seerr address, e.g. <c>http://192.168.1.10:5055</c>.
+    /// </summary>
+    public string SeerrUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Seerr API key (Seerr → Settings → General). It never leaves the server.
+    /// </summary>
+    public string SeerrApiKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether kids profiles may request titles.
+    /// </summary>
+    public bool AllowKidsRequests { get; set; }
 }

@@ -7,6 +7,7 @@ using JellyFlix.Profiles.Data;
 using JellyFlix.Profiles.Events;
 using JellyFlix.Profiles.Security;
 using JellyFlix.Recommendations;
+using JellyFlix.Requests;
 using JellyFlix.WebUpdater;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
@@ -41,6 +42,11 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 
         // Recommendations
         serviceCollection.AddSingleton<RecommendationService>();
+
+        // Requests through Seerr
+        serviceCollection.AddSingleton<SeerrClient>();
+        serviceCollection.AddSingleton<IRequesterResolver, HouseholdRequesterResolver>();
+        serviceCollection.AddSingleton<RequestService>();
 
         // Web Updater
         serviceCollection.AddSingleton<IReleaseSource, GitHubReleaseSource>();

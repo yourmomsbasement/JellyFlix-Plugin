@@ -28,6 +28,27 @@
                         </label>
                     </div>
 
+                    <h2 class="sectionTitle">Requests (Seerr)</h2>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="RequestsEnabled" />
+                            <span>Let profiles request titles that aren't in the library</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">Search shows matching movies and shows from Seerr (Jellyseerr / Overseerr) with a Request button.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" id="SeerrUrl" type="url" label="Seerr address, e.g. http://192.168.1.10:5055" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" id="SeerrApiKey" type="password" label="Seerr API key (Seerr → Settings → General)" />
+                    </div>
+                    <div class="checkboxContainer">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="AllowKidsRequests" />
+                            <span>Let kids profiles request titles</span>
+                        </label>
+                    </div>
+
                     <h2 class="sectionTitle">Web client updates</h2>
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label>
@@ -109,6 +130,10 @@
                         page.querySelector('#AllowNonAdminOwners').checked = config.AllowNonAdminOwners;
                         page.querySelector('#WebUpdatesEnabled').checked = config.WebUpdatesEnabled;
                         page.querySelector('#ServeWebClient').checked = config.ServeWebClient;
+                        page.querySelector('#RequestsEnabled').checked = config.RequestsEnabled;
+                        page.querySelector('#SeerrUrl').value = config.SeerrUrl || '';
+                        page.querySelector('#SeerrApiKey').value = config.SeerrApiKey || '';
+                        page.querySelector('#AllowKidsRequests').checked = config.AllowKidsRequests;
                         page.querySelector('#WebReleasesRepository').value = config.WebReleasesRepository;
                         return loadStatus();
                     }).finally(function () {
@@ -134,6 +159,10 @@
                         config.AllowNonAdminOwners = page.querySelector('#AllowNonAdminOwners').checked;
                         config.WebUpdatesEnabled = page.querySelector('#WebUpdatesEnabled').checked;
                         config.ServeWebClient = page.querySelector('#ServeWebClient').checked;
+                        config.RequestsEnabled = page.querySelector('#RequestsEnabled').checked;
+                        config.SeerrUrl = page.querySelector('#SeerrUrl').value.trim();
+                        config.SeerrApiKey = page.querySelector('#SeerrApiKey').value.trim();
+                        config.AllowKidsRequests = page.querySelector('#AllowKidsRequests').checked;
                         config.WebReleasesRepository = page.querySelector('#WebReleasesRepository').value.trim();
                         ApiClient.updatePluginConfiguration(pluginId, config)
                             .then(Dashboard.processPluginConfigurationUpdateResult)
