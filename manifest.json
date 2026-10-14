@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.4.1.0",
+        "changelog": "See https://github.com/yourmomsbasement/JellyFlix-Plugin/releases/tag/v1.4.1",
+        "targetAbi": "13.0.0.0",
+        "sourceUrl": "https://github.com/yourmomsbasement/JellyFlix-Plugin/releases/download/v1.4.1/lanternfish_1.4.1.0.zip",
+        "checksum": "89c22fbea35fbb0d47a09290edcc5aa8",
+        "timestamp": "2026-10-14T23:47:56Z"
+      },
+      {
         "version": "1.4.0.0",
         "changelog": "See https://github.com/yourmomsbasement/JellyFlix-Plugin/releases/tag/v1.4.0",
         "targetAbi": "13.0.0.0",
@@ -72,6 +80,6 @@
         "timestamp": "2026-10-13T20:29:28Z"
       }
     ],
-    "imageUrl": "https://raw.githubusercontent.com/yourmomsbasement/JellyFlix-Plugin/main/images/lanternfish.png"
+    "imageUrl": "https://raw.githubusercontent.com/yourmomsbasement/JellyFlix-Plugin/main/images/jellyflix.png"
   }
 ]
