@@ -33,7 +33,13 @@ that does all of this:
 Lanternfish was called JellyFlix until October 2026. Installed copies update to the new name in place: the plugin's id,
 settings (`JellyFlix.xml`), API (`/JellyFlix/...`) and the repository addresses are unchanged.
 
-Requires **Jellyfin 13** (the `unstable` builds), the same version as the Lanternfish web client.
+Works with **Jellyfin 12.2** and **Jellyfin 13** (the `unstable` builds). The catalog carries a build for each, and Jellyfin
+installs the one for your version on its own:
+
+| Jellyfin | Plugin builds | Source |
+| --- | --- | --- |
+| 12.2 | `x.y.z.12`, e.g. 1.4.4.12 | `main` branch |
+| 13 (`unstable`) | `x.y.z.13`, e.g. 1.4.4.13 | `13` branch |
 
 ## Install
 
@@ -274,6 +280,9 @@ All endpoints use the signed-in user's session.
 
 | Version | Changes |
 | --- | --- |
+| 1.4.4 | Builds for Jellyfin 12.2 as well as 13; installs web clients tested with your Jellyfin version. |
+| 1.4.3 | Removes older copies of the plugin installed under the JellyFlix name. |
+| 1.4.2 | Rebuilds recommendations far less often. |
 | 1.4.1 | Renamed to Lanternfish, with the new catalog image. |
 | 1.4.0 | Ombi as a request service alongside Seerr. |
 | 1.3.0 | Seasonal home pages (Halloween, Christmas, summer) with curated shelves, and the dynamic colors setting. |
@@ -286,8 +295,9 @@ All endpoints use the signed-in user's session.
 
 ## Development
 
-The plugin builds against the Lanternfish server fork, included as the `jellyfin-server` submodule, so it always matches
-the Jellyfin version it targets.
+The plugin builds against the Jellyfin server source, included as the `jellyfin-server` submodule, so it always matches
+the Jellyfin version it targets. On `main` that is Jellyfin's `v12.2` release; on the `13` branch it is the Lanternfish
+server fork, which follows Jellyfin's development (13) builds. Changes go to `main` first and are cherry-picked onto `13`.
 
 ```sh
 git clone --recurse-submodules https://github.com/yourmomsbasement/JellyFlix-Plugin.git
@@ -296,6 +306,8 @@ dotnet test JellyFlix.slnx
 dotnet build src/JellyFlix -c Release   # → src/JellyFlix/bin/Release/net10.0/JellyFlix.dll
 ```
 
-Releasing: push a tag such as `v1.2.0`, or run the **Release** workflow from the Actions tab with version `1.2.0`. The
-workflow tests, builds `jellyflix_1.2.0.0.zip`, attaches it to a GitHub release and adds it to `manifest.json`, which
-Jellyfin's catalog reads.
+Releasing: run the **Release** workflow from the Actions tab with version `1.2.0`, once on `main` and once on `13`, one
+after the other. Each run tests, builds `lanternfish_1.2.0.N.zip` (N is the Jellyfin major version it was built against),
+attaches it to a GitHub release tagged `v1.2.0.N` and adds it to `manifest.json` on `main`, which Jellyfin's catalog
+reads. Jellyfin installs the highest version whose `targetAbi` it meets, so the `.13` build must be released alongside
+every `.12` one: otherwise Jellyfin 13 servers would pick the newer `.12` build.
