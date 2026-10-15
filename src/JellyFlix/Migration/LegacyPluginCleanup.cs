@@ -11,7 +11,9 @@ namespace JellyFlix.Migration;
 
 /// <summary>
 /// Removes the separate JellyFlix Profiles and JellyFlix Recommendations plugins that this plugin replaces. Both
-/// would otherwise answer the same API routes as this one.
+/// would otherwise answer the same API routes as this one. Also removes older copies of this plugin: Jellyfin only
+/// cleans up older versions that have the same name, so the copy installed as "JellyFlix" stays loaded next to the
+/// one installed as "Lanternfish", and the two copies break each other's settings.
 /// </summary>
 /// <param name="pluginManager">The plugin manager.</param>
 /// <param name="applicationHost">The application host.</param>
@@ -27,16 +29,23 @@ public sealed class LegacyPluginCleanup(IPluginManager pluginManager, IApplicati
         Guid.Parse("be5662d2-87dd-493e-804c-190a18e8d974") // JellyFlix Recommendations
     ];
 
+    /// <summary>
+    /// Gets the version of this copy of the plugin.
+    /// </summary>
+    internal static Version CurrentVersion { get; } = typeof(Plugin).Assembly.GetName().Version ?? new Version(0, 0);
+
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        var legacy = pluginManager.Plugins.Where(plugin => LegacyPluginIds.Contains(plugin.Id)).ToList();
+        var legacy = pluginManager.Plugins
+            .Where(plugin => LegacyPluginIds.Contains(plugin.Id) || (plugin.Id == Plugin.PluginId && plugin.Version < CurrentVersion))
+            .ToList();
         var removed = 0;
         foreach (var plugin in legacy)
         {
             if (pluginManager.RemovePlugin(plugin))
             {
-                logger.LogWarning("Removed {Plugin} {Version}: it is part of the JellyFlix plugin now", plugin.Name, plugin.Version);
+                logger.LogWarning("Removed {Plugin} {Version}: it is replaced by Lanternfish {CurrentVersion}", plugin.Name, plugin.Version, CurrentVersion);
                 removed++;
             }
             else
