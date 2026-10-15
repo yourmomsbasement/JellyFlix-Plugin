@@ -15,6 +15,7 @@ namespace JellyFlix.Recommendations;
 /// <param name="Watched">Titles the profile watched.</param>
 /// <param name="Items">The catalog's library items by id.</param>
 /// <param name="BuiltAt">When the model was built.</param>
+/// <param name="CatalogVersion">The version of the shared catalog the model was built from.</param>
 public sealed record ProfileModel(
     RecommendationEngine Engine,
     SparseVector Taste,
@@ -22,4 +23,5 @@ public sealed record ProfileModel(
     IReadOnlySet<Guid> Exclude,
     IReadOnlySet<Guid> Watched,
     IReadOnlyDictionary<Guid, BaseItem> Items,
-    DateTime BuiltAt);
+    DateTime BuiltAt,
+    int CatalogVersion);
