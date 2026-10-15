@@ -188,7 +188,7 @@ public sealed class WebUpdateService : IDisposable
         await foreach (var release in _source.GetReleasesAsync(cancellationToken).ConfigureAwait(false))
         {
             newest ??= release;
-            if (release.ServerVersion == serverVersion)
+            if (release.Supports(serverVersion))
             {
                 target = release;
                 break;

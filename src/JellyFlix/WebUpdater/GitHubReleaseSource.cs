@@ -72,7 +72,10 @@ public class GitHubReleaseSource : IReleaseSource
             var metadata = await client.GetFromJsonAsync<ReleaseMetadata>(info.BrowserDownloadUrl, cancellationToken).ConfigureAwait(false);
             if (metadata is not null)
             {
-                yield return new WebRelease(metadata.Version, metadata.Commit, metadata.ServerVersion, release.PublishedAt, zip.BrowserDownloadUrl, sha.BrowserDownloadUrl);
+                yield return new WebRelease(metadata.Version, metadata.Commit, metadata.ServerVersion, release.PublishedAt, zip.BrowserDownloadUrl, sha.BrowserDownloadUrl)
+                {
+                    AlsoSupports = metadata.ServerVersions
+                };
             }
         }
     }
@@ -129,5 +132,9 @@ public class GitHubReleaseSource : IReleaseSource
 
         [JsonPropertyName("serverVersion")]
         public string ServerVersion { get; set; } = string.Empty;
+
+        // Every server version the build runs on, including serverVersion; missing from older releases
+        [JsonPropertyName("serverVersions")]
+        public string[] ServerVersions { get; set; } = [];
     }
 }
