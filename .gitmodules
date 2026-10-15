@@ -1,4 +1,4 @@
 [submodule "jellyfin-server"]
 	path = jellyfin-server
-	url = https://github.com/yourmomsbasement/jellyFlix-Server.git
-	branch = master
+	url = https://github.com/jellyfin/jellyfin.git
+	branch = release-12.z
