@@ -1,6 +1,6 @@
 name: Release
 
-# Push a tag like v1.2.0, or run this workflow with version 1.2.0, to publish Lanternfish 1.2.0.0: builds the plugin
+# Push a tag like v1.2.0, or run this workflow with version 1.2.0 (or 1.2.0.0), to publish Lanternfish 1.2.0.0: builds the plugin
 # zip, attaches it to a GitHub release and adds it to manifest.json, the plugin repository Jellyfin installs and
 # updates from.
 
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to release, e.g. 1.2.0
+        description: Version to release, e.g. 1.2.0 (or 1.2.0.0)
         required: true
 
 env:
@@ -23,6 +23,20 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      # Jellyfin plugin versions have four parts: 1.2.0 becomes 1.2.0.0, and 1.2.0.0 is used as given. Checked first,
+      # so a mistyped version fails in seconds rather than after the tests (as a .NET restore error)
+      - name: Version
+        id: version
+        run: |
+          version="${TAG#v}"
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            version="${version}.0"
+          elif [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::The version must look like 1.2.0 or 1.2.0.0, not '${TAG#v}'"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v5
         with:
           submodules: true
@@ -36,8 +50,10 @@ jobs:
 
       - name: Build
         id: build
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          version="${TAG#v}.0"
+          version="${VERSION}"
           # The Jellyfin version the plugin is built against, e.g. 13.0.0.0
           abi="$(grep -oP 'AssemblyVersion\("\K[0-9.]+' jellyfin-server/SharedVersion.cs).0"
           dotnet build src/JellyFlix -c Release -p:Version="${version}" -p:AssemblyVersion="${version}" -p:FileVersion="${version}"
