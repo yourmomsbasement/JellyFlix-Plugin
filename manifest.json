@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.4.4.12",
+        "changelog": "See https://github.com/yourmomsbasement/LanternFish-Plugin/releases/tag/v1.4.4.12",
+        "targetAbi": "12.2.0.0",
+        "sourceUrl": "https://github.com/yourmomsbasement/LanternFish-Plugin/releases/download/v1.4.4.12/lanternfish_1.4.4.12.zip",
+        "checksum": "32c8918577f7d472869366f14ed12838",
+        "timestamp": "2026-10-15T19:51:42Z"
+      },
+      {
         "version": "1.4.3.0",
         "changelog": "See https://github.com/yourmomsbasement/LanternFish-Plugin/releases/tag/v1.4.3",
         "targetAbi": "13.0.0.0",
