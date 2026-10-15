@@ -97,6 +97,18 @@ public sealed class WebUpdateServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task InstallsReleasesTestedWithThisServer()
+    {
+        _source.Add("2026.10.13.1", "13.0", Zip(("index.html", "for 13")));
+        _source.Add("2026.10.14.1", "14.0", Zip(("index.html", "for 14 and 13")), alsoSupports: ["13.0"]);
+        _source.Add("2026.10.15.1", "14.0", Zip(("index.html", "for 14 and 12.2")), alsoSupports: ["12.2"]);
+
+        var status = await _service.CheckAndInstallAsync(CancellationToken.None);
+
+        Assert.Equal("2026.10.14.1", status.Installed?.Version);
+    }
+
+    [Fact]
     public async Task ReportsWhenNoReleaseFitsThisServer()
     {
         _source.Add("2026.12.01.1", "14.0", Zip(("index.html", "for 14")));
@@ -202,7 +214,7 @@ public sealed class WebUpdateServiceTests : IDisposable
         /// <summary>How many releases were read; releases older than the one installed shouldn't be.</summary>
         public int ReleasesRead { get; private set; }
 
-        public void Add(string version, string serverVersion, byte[] zip, string? checksumOverride = null)
+        public void Add(string version, string serverVersion, byte[] zip, string? checksumOverride = null, string[]? alsoSupports = null)
         {
             var zipUrl = new Uri($"https://example.test/{version}/jellyflix-web.zip");
             var shaUrl = new Uri($"https://example.test/{version}/jellyflix-web.zip.sha256");
@@ -210,7 +222,7 @@ public sealed class WebUpdateServiceTests : IDisposable
             _files[shaUrl] = Encoding.UTF8.GetBytes((checksumOverride ?? Convert.ToHexStringLower(SHA256.HashData(zip))) + "\n");
 
             // Each added release is newer than the previous one; GitHub lists newest first
-            _releases.Insert(0, new WebRelease(version, "commit-" + version, serverVersion, DateTimeOffset.UtcNow, zipUrl, shaUrl));
+            _releases.Insert(0, new WebRelease(version, "commit-" + version, serverVersion, DateTimeOffset.UtcNow, zipUrl, shaUrl) { AlsoSupports = alsoSupports ?? [] });
         }
 
         public async IAsyncEnumerable<WebRelease> GetReleasesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
